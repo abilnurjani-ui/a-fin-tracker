@@ -206,13 +206,24 @@ with col2:
             try:
                 genai.configure(api_key=GEMINI_KEY)
                 
-                candidate_models = [
-                    'models/gemini-1.5-flash',
-                    'models/gemini-2.0-flash',
-                    'gemini-1.5-flash'
+                # Deteksi otomatis model yang tersedia dari Google API
+                available_models = [
+                    m.name for m in genai.list_models() 
+                    if 'generateContent' in m.supported_generation_methods
                 ]
                 
-                res = None
+                # Prioritaskan model flash
+                selected_model = None
+                for m in available_models:
+                    if 'flash' in m:
+                        selected_model = m
+                        break
+                if not selected_model and available_models:
+                    selected_model = available_models[0]
+                
+                if not selected_model:
+                    selected_model = 'gemini-1.5-flash'
+
                 data_text = merged[['jenis_pengeluaran', 'kategori', 'Budget', 'Realisasi']].to_string(index=False)
                 
                 prompt = f"""
@@ -236,21 +247,14 @@ with col2:
                 Berikan rekomendasi praktis tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
                 """
                 
-                with st.spinner("UANGABIL AI sedang menganalisis data..."):
-                    for m_name in candidate_models:
-                        try:
-                            model = genai.GenerativeModel(m_name)
-                            res = model.generate_content(prompt)
-                            if res and res.text:
-                                break
-                        except Exception:
-                            continue
-                    
+                with st.spinner(f"UANGABIL AI sedang menganalisis ({selected_model})..."):
+                    model = genai.GenerativeModel(selected_model)
+                    res = model.generate_content(prompt)
                     if res and res.text:
                         st.markdown("---")
                         st.markdown(res.text)
                     else:
-                        st.error("Tidak dapat terhubung ke model Gemini AI. Pastikan API Key valid.")
+                        st.error("Gagal mendapatkan respon dari AI.")
                         
             except Exception as e:
                 st.error(f"Error AI: {e}")
