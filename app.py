@@ -50,11 +50,18 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 # --- 3. KONFIGURASI ANGGARAN & KANTONG KEUANGAN ---
-PEMASUKAN_BULANAN = 8183550  # Total Gaji, Tukin, dan Uang Makan
+PEMASUKAN_DEFAULT = 8183550  # Acuan default jika belum terdapat transaksi pemasukan terinput
 TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
-STRUKTUR_PENGELUARAN = {
+# Pembagian Kantong Utama (Termasuk Pos Pemasukan Dinamis)
+STRUKTUR_TRANSAKSI = {
+    "0. Pemasukan Kas / Gaji": {
+        "Gaji Pokok BMKG": 2938400,
+        "Tunjangan Kinerja (Tukin)": 4595150,
+        "Uang Makan / Tunjangan Lain": 650000,
+        "Pemasukan Sampingan / Bonus": 0
+    },
     "1. Pengeluaran Tetap & Masa Depan": {
         "Kantong Tabungan Nikah": 2700000,
         "Kantong Orang Tua (Cilacap)": 1000000,
@@ -72,7 +79,7 @@ STRUKTUR_PENGELUARAN = {
 }
 
 KATEGORI_KE_JENIS = {}
-for jenis, kat_dict in STRUKTUR_PENGELUARAN.items():
+for jenis, kat_dict in STRUKTUR_TRANSAKSI.items():
     for kat in kat_dict.keys():
         KATEGORI_KE_JENIS[kat] = jenis
 
@@ -130,9 +137,9 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("➕ Pencatatan Transaksi Baru")
 
 tgl = st.sidebar.date_input("Tanggal Transaksi", datetime.now())
-jenis_selected = st.sidebar.selectbox("Pos Pengeluaran Utama", list(STRUKTUR_PENGELUARAN.keys()))
-kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
-kategori_selected = st.sidebar.selectbox("Nama Kantong", kategori_options)
+jenis_selected = st.sidebar.selectbox("Pos Transaksi Utama", list(STRUKTUR_TRANSAKSI.keys()))
+kategori_options = list(STRUKTUR_TRANSAKSI[jenis_selected].keys())
+kategori_selected = st.sidebar.selectbox("Nama Kantong / Kategori", kategori_options)
 
 # Input Nominal dengan format angka rapi
 nominal = st.sidebar.number_input(
@@ -147,9 +154,9 @@ nominal = st.sidebar.number_input(
 if nominal > 0:
     st.sidebar.info(f"Format Resmi: **{format_rupiah(nominal)}**")
 
-ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Belanja bahan pokok, kopi, olahraga")
+ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Gaji Agustus, Belanja Pokok, Bonus Tukin")
 
-if st.sidebar.button("Simpan ke Kantong", use_container_width=True, type="primary"):
+if st.sidebar.button("Simpan Transaksi", use_container_width=True, type="primary"):
     if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
         st.sidebar.success(f"Berhasil menyimpan {format_rupiah(nominal)} ke {kategori_selected}!")
@@ -158,7 +165,7 @@ if st.sidebar.button("Simpan ke Kantong", use_container_width=True, type="primar
         st.sidebar.warning("Nominal transaksi harus lebih dari Rp0!")
 
 st.sidebar.markdown("---")
-st.sidebar.info("📍 **BMKG Samarinda**\n🎯 Target Pernikahan: **2028**")
+st.sidebar.info("📍 **Samarinda**\n🎯 Target Pernikahan: **2028**")
 
 # --- 7. DASHBOARD UTAMA ---
 st.markdown('<p class="main-title">Aplikasi Keuangan UANGABIL TRACKER</p>', unsafe_allow_html=True)
@@ -166,8 +173,9 @@ st.markdown('<p class="sub-title">Pemantauan Arus Kas Harian dan Alokasi Tabunga
 
 df = ambil_semua_transaksi()
 
-# Filter Data Bulan Berjalan
+# Filter Data Bulan Berjalan & Perhitungan Pemasukan/Pengeluaran
 df_bln = pd.DataFrame()
+total_pemasukan_bln = 0
 total_pengeluaran_bln = 0
 
 if not df.empty and 'tanggal' in df.columns:
@@ -175,10 +183,23 @@ if not df.empty and 'tanggal' in df.columns:
     bln_ini = datetime.now().month
     thn_ini = datetime.now().year
     df_bln = df[(df['tanggal_dt'].dt.month == bln_ini) & (df['tanggal_dt'].dt.year == thn_ini)]
+    
     if not df_bln.empty:
-        total_pengeluaran_bln = df_bln['nominal'].sum()
+        # Perhitungan Pemasukan Kas Terinput Bulan Ini
+        df_pemasukan = df_bln[df_bln['jenis_pengeluaran'] == '0. Pemasukan Kas / Gaji']
+        if not df_pemasukan.empty:
+            total_pemasukan_bln = df_pemasukan['nominal'].sum()
+        else:
+            total_pemasukan_bln = PEMASUKAN_DEFAULT
+            
+        # Perhitungan Pengeluaran Bulan Ini
+        df_pengeluaran = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
+        if not df_pengeluaran.empty:
+            total_pengeluaran_bln = df_pengeluaran['nominal'].sum()
+else:
+    total_pemasukan_bln = PEMASUKAN_DEFAULT
 
-sisa_uang = PEMASUKAN_BULANAN - total_pengeluaran_bln
+sisa_uang = total_pemasukan_bln - total_pengeluaran_bln
 
 # Ringkasan Ikhtisar Kas Modern
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -186,15 +207,15 @@ col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 with col_m1:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Total Pemasukan</div>
-        <div class="metric-val">{format_rupiah(PEMASUKAN_BULANAN)}</div>
+        <div class="metric-label">Total Pemasukan Bulan Ini</div>
+        <div class="metric-val" style="color:#16A34A;">{format_rupiah(total_pemasukan_bln)}</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col_m2:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Total Pengeluaran</div>
+        <div class="metric-label">Total Pengeluaran Bulan Ini</div>
         <div class="metric-val" style="color:#E11D48;">{format_rupiah(total_pengeluaran_bln)}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -254,15 +275,18 @@ tab1, tab2 = st.tabs(["📊 Visualisasi & Analisis AI", "✏️ Kelola & Revisi 
 
 merged = pd.DataFrame()
 if not df_bln.empty:
-    summary = df_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index()
-    budget_df = pd.DataFrame([
-        {"jenis_pengeluaran": j, "kategori": k, "Anggaran": b}
-        for j, k_dict in STRUKTUR_PENGELUARAN.items()
-        for k, b in k_dict.items()
-    ])
-    merged = pd.merge(budget_df, summary, on=['jenis_pengeluaran', 'kategori'], how='left').fillna(0)
-    merged.rename(columns={'nominal': 'Realisasi'}, inplace=True)
-    merged['Sisa_Anggaran'] = merged['Anggaran'] - merged['Realisasi']
+    df_pengeluaran_bln = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
+    
+    if not df_pengeluaran_bln.empty:
+        summary = df_pengeluaran_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index()
+        budget_df = pd.DataFrame([
+            {"jenis_pengeluaran": j, "kategori": k, "Anggaran": b}
+            for j, k_dict in STRUKTUR_TRANSAKSI.items() if j != "0. Pemasukan Kas / Gaji"
+            for k, b in k_dict.items()
+        ])
+        merged = pd.merge(budget_df, summary, on=['jenis_pengeluaran', 'kategori'], how='left').fillna(0)
+        merged.rename(columns={'nominal': 'Realisasi'}, inplace=True)
+        merged['Sisa_Anggaran'] = merged['Anggaran'] - merged['Realisasi']
 
 with tab1:
     col1, col2 = st.columns([1.2, 0.8])
@@ -290,7 +314,7 @@ with tab1:
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("💡 Belum terdapat transaksi pada bulan berjalan.")
+            st.info("💡 Belum terdapat transaksi pengeluaran pada bulan berjalan.")
 
     with col2:
         st.subheader("🤖 Penasihat Keuangan AI")
@@ -299,23 +323,21 @@ with tab1:
         if st.button("🔍 Dapatkan Analisis Keuangan", use_container_width=True, type="primary"):
             if not GEMINI_KEY:
                 st.error("🔑 Harap atur GEMINI_API_KEY pada Streamlit Secrets.")
-            elif merged.empty:
-                st.warning("⚠️ Belum ada data transaksi bulan ini untuk dianalisis.")
             else:
                 try:
                     client = genai.Client(api_key=GEMINI_KEY)
-                    data_text = merged[['jenis_pengeluaran', 'kategori', 'Anggaran', 'Realisasi', 'Sisa_Anggaran']].to_string(index=False)
+                    data_text = merged[['jenis_pengeluaran', 'kategori', 'Anggaran', 'Realisasi', 'Sisa_Anggaran']].to_string(index=False) if not merged.empty else "Belum ada pengeluaran."
                     
                     prompt = f"""
                     Analisis Keuangan Bulanan UANGABIL TRACKER:
-                    - Total Pemasukan: {format_rupiah(PEMASUKAN_BULANAN)}
-                    - Total Pengeluaran: {format_rupiah(total_pengeluaran_bln)}
+                    - Total Pemasukan Terinput Bulan Ini: {format_rupiah(total_pemasukan_bln)}
+                    - Total Pengeluaran Bulan Ini: {format_rupiah(total_pengeluaran_bln)}
                     - Sisa Saldo Kas: {format_rupiah(sisa_uang)}
 
                     Data Per Kantong Keuangan:
                     {data_text}
 
-                    Berikan evaluasi yang baku, profesional, dan obyektif mengenai kondisi setiap kantong keuangan serta rekomendasi pengendalian anggaran jika terjadi pembengkakan pengeluaran.
+                    Berikan evaluasi yang baku, profesional, dan obyektif mengenai kondisi pemasukan vs pengeluaran serta rekomendasi pengelolaan kas bulanan.
                     """
                     
                     with st.spinner("Sistem AI sedang menganalisis data keuangan Anda..."):
@@ -337,7 +359,7 @@ with tab1:
 # TAB 2: REVISI TRANSAKSI
 with tab2:
     st.subheader("✏️ Pembaruan dan Revisi Transaksi")
-    st.caption("Fasilitas koreksi data transaksi keuangan.")
+    st.caption("Fasilitas koreksi data transaksi keuangan (Pemasukan maupun Pengeluaran).")
     
     if not df.empty:
         df['label_pilihan'] = df['tanggal'] + " | " + df['kategori'] + " | " + df['nominal'].apply(format_rupiah) + " (" + df['keterangan'].fillna('') + ")"
@@ -350,9 +372,9 @@ with tab2:
         
         with col_edit1:
             e_tgl = st.date_input("Tanggal Transaksi", datetime.strptime(selected_row['tanggal'], "%Y-%m-%d"))
-            e_jenis = st.selectbox("Pos Pengeluaran Utama", list(STRUKTUR_PENGELUARAN.keys()), index=list(STRUKTUR_PENGELUARAN.keys()).index(selected_row['jenis_pengeluaran']) if selected_row['jenis_pengeluaran'] in STRUKTUR_PENGELUARAN else 0)
-            e_kat_options = list(STRUKTUR_PENGELUARAN[e_jenis].keys())
-            e_kat = st.selectbox("Nama Kantong", e_kat_options, index=e_kat_options.index(selected_row['kategori']) if selected_row['kategori'] in e_kat_options else 0)
+            e_jenis = st.selectbox("Pos Transaksi Utama", list(STRUKTUR_TRANSAKSI.keys()), index=list(STRUKTUR_TRANSAKSI.keys()).index(selected_row['jenis_pengeluaran']) if selected_row['jenis_pengeluaran'] in STRUKTUR_TRANSAKSI else 0)
+            e_kat_options = list(STRUKTUR_TRANSAKSI[e_jenis].keys())
+            e_kat = st.selectbox("Nama Kantong / Kategori", e_kat_options, index=e_kat_options.index(selected_row['kategori']) if selected_row['kategori'] in e_kat_options else 0)
         
         with col_edit2:
             e_nom = st.number_input("Nominal Transaksi (Rp)", value=int(selected_row['nominal']), step=10000)
@@ -392,8 +414,8 @@ if not df.empty:
         use_container_width=True,
         column_config={
             "tanggal": st.column_config.TextColumn("Tanggal"),
-            "jenis_pengeluaran": st.column_config.TextColumn("Pos Pengeluaran"),
-            "kategori": st.column_config.TextColumn("Nama Kantong"),
+            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi"),
+            "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
             "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
             "keterangan": st.column_config.TextColumn("Keterangan")
         },
