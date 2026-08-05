@@ -14,32 +14,36 @@ st.set_page_config(
     page_icon="💍"
 )
 
-# Custom Styling UI Modern & Interaktif
+# Custom Styling UI Modern & Visual Interaktif
 st.markdown("""
     <style>
-    /* Styling Umum */
-    .main-title { font-size: 2.3rem; font-weight: 800; color: #1E293B; margin-bottom: 2px; }
-    .sub-title { font-size: 1.05rem; color: #64748B; margin-bottom: 25px; }
+    /* Global Typography */
+    .main-title { font-size: 2.2rem; font-weight: 800; color: #0F172A; margin-bottom: 2px; }
+    .sub-title { font-size: 1rem; color: #64748B; margin-bottom: 20px; }
     
-    /* Custom Card Metric */
+    /* Card Metric Modern */
     .metric-card {
         background: #FFFFFF;
-        padding: 18px 22px;
+        padding: 16px 20px;
         border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
         border: 1px solid #E2E8F0;
-        text-align: left;
     }
-    .metric-label { font-size: 0.88rem; font-weight: 600; color: #64748B; margin-bottom: 6px; }
-    .metric-val { font-size: 1.6rem; font-weight: 800; color: #0F172A; }
+    .metric-label { font-size: 0.85rem; font-weight: 600; color: #64748B; margin-bottom: 4px; }
+    .metric-val { font-size: 1.5rem; font-weight: 800; color: #0F172A; }
     
-    /* Card Target Nikah */
+    /* Target Nikah Card */
     .target-card {
         background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-        padding: 22px 25px;
+        padding: 20px 24px;
         border-radius: 18px;
         border: 1px solid #BFDBFE;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+    }
+
+    /* Container Styling */
+    div[data-testid="stBlock"] {
+        border-radius: 16px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -104,7 +108,7 @@ def ambil_semua_transaksi():
         return df_temp
     return pd.DataFrame()
 
-# --- 5. SIDEBAR: INPUT DINAMIS & USER PROFILE ---
+# --- 5. SIDEBAR: INPUT DINAMIS ---
 st.sidebar.markdown("## 💳 **UANGABIL TRACKER**")
 st.sidebar.caption("✨ Personal Financial Command Center")
 st.sidebar.markdown("---")
@@ -113,10 +117,10 @@ st.sidebar.subheader("➕ Catat Transaksi Baru")
 
 tgl = st.sidebar.date_input("📅 Tanggal Transaksi", datetime.now())
 
-# Dropdown 1: Jenis Pos Pengeluaran
+# Selection 1: Jenis Pos Pengeluaran
 jenis_selected = st.sidebar.selectbox("📂 Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
 
-# Dropdown 2: Kategori reaktif
+# Selection 2: Kategori otomatis berubah
 kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
 kategori_selected = st.sidebar.selectbox("🏷️ Kategori Sub-Pos", kategori_options)
 
@@ -126,17 +130,17 @@ ket = st.sidebar.text_input("📝 Catatan Singkat", placeholder="Cth: Bensin, Na
 if st.sidebar.button("🚀 Simpan Transaksi", use_container_width=True, type="primary"):
     if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
-        st.sidebar.success("✅ Yess! Transaksi berhasil dicatat di Cloud.")
+        st.sidebar.success("✅ Transaksi tersimpan!")
         st.rerun()
     else:
-        st.sidebar.warning("⚠️ Nominalnya isi dulu ya!")
+        st.sidebar.warning("Nominal harus lebih dari 0!")
 
 st.sidebar.markdown("---")
 st.sidebar.info("📍 **BMKG Samarinda**\n🎯 Target Akad Nikah: **2028**")
 
 # --- 6. DASHBOARD UTAMA ---
-st.markdown('<p class="main-title">👋 Halo, Abil! Semangat Financial Goals 2028!</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Pantau arus kas harian dan alokasi tabungan nikahmu secara real-time di sini.</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">👋 Halo Abil, Financial Command Center!</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Pantau arus kas harian dan progress tabungan pernikahan 2028 secara fleksibel.</p>', unsafe_allow_html=True)
 
 df = ambil_semua_transaksi()
 
@@ -154,7 +158,7 @@ if not df.empty and 'tanggal' in df.columns:
 
 sisa_uang = PEMASUKAN_BULANAN - total_pengeluaran_bln
 
-# Ringkasan Kas (Cards Minimalis Visual)
+# Ringkasan Kas
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
@@ -176,7 +180,7 @@ with col_m2:
 with col_m3:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">💰 Sisa Dana Saldo</div>
+        <div class="metric-label">💰 Sisa Dana (Saldo)</div>
         <div class="metric-val" style="color:#2563EB;">Rp {sisa_uang:,.0f}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -206,7 +210,7 @@ with col_m4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Progress Target Nikah (Desain Khusus Interaktif)
+# Progress Target Nikah
 total_nikah = 0
 if not df.empty and 'kategori' in df.columns:
     total_nikah = df[df['kategori'] == 'Tabungan Nikah']['nominal'].sum()
@@ -216,12 +220,12 @@ persen = progress * 100
 
 st.markdown(f"""
 <div class="target-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <span style="font-size: 1.25rem; font-weight: 700; color: #1E3A8A;">💍 Target Tabungan Nikah 2028 (Rp 100 Juta)</span>
-        <span style="font-size: 1.1rem; font-weight: 800; color: #2563EB; background: #FFFFFF; padding: 4px 12px; border-radius: 20px;">{persen:.1f}% Terkumpul</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 1.15rem; font-weight: 700; color: #1E3A8A;">🎯 Progress Tabungan Nikah 2028</span>
+        <span style="font-size: 1rem; font-weight: 800; color: #2563EB; background: #FFFFFF; padding: 4px 12px; border-radius: 20px;">{persen:.1f}% Terkumpul</span>
     </div>
-    <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 8px;">
-        Rp {total_nikah:,.0f} <span style="font-size: 1rem; color: #64748B; font-weight: 500;">/ Rp 100,000,000</span>
+    <div style="font-size: 1.7rem; font-weight: 800; color: #0F172A;">
+        Rp {total_nikah:,.0f} <span style="font-size: 0.95rem; color: #64748B; font-weight: 500;">/ Target Rp 100,000,000</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -231,7 +235,7 @@ st.progress(progress)
 st.markdown("---")
 
 # Visualisasi & AI Analyst
-col1, col2 = st.columns([1.1, 0.9])
+col1, col2 = st.columns([1.2, 0.8])
 
 merged = pd.DataFrame()
 if not df_bln.empty:
@@ -247,34 +251,39 @@ if not df_bln.empty:
 with col1:
     st.subheader("📊 Realisasi vs Budget Bulan Ini")
     if not merged.empty:
+        # Plotly Bar Chart Modern
         fig = px.bar(
             merged, 
             x='kategori', 
             y=['Budget', 'Realisasi'], 
-            color_discrete_sequence=['#CBD5E1', '#2563EB'],
-            barmode='group', 
-            hover_data=['jenis_pengeluaran'],
-            labels={'value': 'Rupiah (Rp)', 'kategori': 'Kategori Pos'}
+            color_discrete_sequence=['#E2E8F0', '#2563EB'],
+            barmode='group',
+            hover_data=['jenis_pengeluaran']
         )
+        
         fig.update_layout(
-            legend_title_text='',
-            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis_title="",
+            yaxis_title="Rupiah (Rp)",
+            legend_title_text="",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            margin=dict(l=10, r=10, t=10, b=40),
             paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(tickangle=-30)
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("💡 Belum ada data transaksi untuk bulan ini. Mulai catat di sidebar yuk!")
+        st.info("💡 Belum ada data transaksi bulan ini. Catat transaksi di sidebar yuk!")
 
 with col2:
     st.subheader("🤖 UANGABIL AI Advisor")
-    st.caption("Asisten finansial pribadi untuk menjaga kesehatan pos keuanganmu.")
+    st.caption("Analisis otomatis alokasi 3 pos keuangan Anda.")
     
-    if st.button("🔍 Minta Saran Keuangan Saya", use_container_width=True, type="secondary"):
+    if st.button("🔍 Minta Analisis AI", use_container_width=True, type="primary"):
         if not GEMINI_KEY:
             st.error("🔑 Jangan lupa atur GEMINI_API_KEY di Streamlit Secrets!")
         elif merged.empty:
-            st.warning("⚠️ Masukkan transaksi bulan ini dulu sebelum konsultasi AI!")
+            st.warning("⚠️ Belum ada transaksi bulan ini untuk dianalisis.")
         else:
             try:
                 client = genai.Client(api_key=GEMINI_KEY)
@@ -293,15 +302,15 @@ with col2:
                 - Rutin kirim ke Orang Tua Cilacap (Rp 1.000.000).
                 - Target Dana Nikah 2028: Rp 100.000.000.
 
-                Lakukan evaluasi terstruktur dan ramah berdasarkan 3 Jenis Pos Pengeluaran:
-                1. Pengeluaran Tetap & Masa Depan (Pastikan Tabungan Nikah & Orang Tua Cilacap aman).
-                2. Pengeluaran Berkala (Cek kesiapan Dana Tak Terduga).
-                3. Pengeluaran Dinamis / Variabel (Evaluasi potensi kebocoran di pos Kebutuhan Pokok, Pacaran, Olahraga/Minsoc, dan Keinginan Sendiri).
+                Lakukan evaluasi terstruktur berdasarkan 3 Jenis Pos Pengeluaran:
+                1. Pengeluaran Tetap & Masa Depan
+                2. Pengeluaran Berkala
+                3. Pengeluaran Dinamis / Variabel
 
-                Berikan rekomendasi praktis, santai, namun tegas tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
+                Berikan rekomendasi praktis, ramah, dan ringkas area mana yang perlu dikendalikan.
                 """
                 
-                with st.spinner("🧠 AI Advisor sedang menghitung alokasi bisnismu..."):
+                with st.spinner("🧠 AI sedang menganalisis data..."):
                     response = client.models.generate_content(
                         model='gemini-2.0-flash',
                         contents=prompt,
@@ -310,25 +319,52 @@ with col2:
                         st.markdown("---")
                         st.markdown(response.text)
                     else:
-                        st.error("Gagal mendapat tanggapan dari AI.")
+                        st.error("Gagal mendapat respon dari AI.")
                         
             except APIError as e:
                 if e.code == 429 or "RESOURCE_EXHAUSTED" in str(e):
-                    st.warning("⏳ **Kuota AI Sedang Rehat Sejenak:** Batas gratis per menit tercapai. Silakan tunggu sekitar 20-30 detik lalu klik tombol analisis lagi ya!")
+                    st.warning("⏳ Kuota API gratisan sedang penuh. Silakan tunggu 20-30 detik lalu klik lagi.")
                 else:
                     st.error(f"API Error ({e.code}): {e.message}")
             except Exception as e:
                 if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                    st.warning("⏳ **Kuota AI Sedang Rehat Sejenak:** Batas gratis per menit tercapai. Silakan tunggu sekitar 20-30 detik lalu klik tombol analisis lagi ya!")
+                    st.warning("⏳ Kuota API gratisan sedang penuh. Silakan tunggu 20-30 detik lalu klik lagi.")
                 else:
                     st.error(f"Error AI: {e}")
 
-# Riwayat Transaksi Historis
+# Riwayat Transaksi Historis (Tabel Modern & Cantik)
 st.markdown("---")
-st.subheader("📑 Jurnal Transaksi Harian (Firestore Cloud)")
+st.subheader("📝 Jurnal Transaksi Harian (Firestore Cloud)")
+
 if not df.empty:
-    cols_to_show = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal', 'keterangan'] if c in df.columns]
-    display_df = df[cols_to_show]
-    st.dataframe(display_df.sort_values(by='tanggal', ascending=False), use_container_width=True)
+    df_display = df.copy()
+    
+    # Format nominal rupiah bersih
+    if 'nominal' in df_display.columns:
+        df_display['nominal_fmt'] = df_display['nominal'].apply(lambda x: f"Rp {x:,.0f}")
+    
+    # Pilih dan atur urutan kolom yang elegan
+    cols_order = []
+    if 'tanggal' in df_display.columns: cols_order.append('tanggal')
+    if 'jenis_pengeluaran' in df_display.columns: cols_order.append('jenis_pengeluaran')
+    if 'kategori' in df_display.columns: cols_order.append('kategori')
+    if 'nominal_fmt' in df_display.columns: cols_order.append('nominal_fmt')
+    if 'keterangan' in df_display.columns: cols_order.append('keterangan')
+    
+    df_show = df_display[cols_order].sort_values(by='tanggal', ascending=False)
+    
+    # Render Streamlit Dataframe Interaktif dengan Column Configuration
+    st.dataframe(
+        df_show, 
+        use_container_width=True,
+        column_config={
+            "tanggal": st.column_config.TextColumn("📅 Tanggal"),
+            "jenis_pengeluaran": st.column_config.TextColumn("📂 Pos Pengeluaran"),
+            "kategori": st.column_config.TextColumn("🏷️ Kategori"),
+            "nominal_fmt": st.column_config.TextColumn("💵 Nominal"),
+            "keterangan": st.column_config.TextColumn("📝 Keterangan")
+        },
+        hide_index=True
+    )
 else:
     st.caption("Belum ada riwayat transaksi yang tersimpan.")
