@@ -165,7 +165,7 @@ if st.sidebar.button("Simpan Transaksi", use_container_width=True, type="primary
         st.sidebar.warning("Nominal transaksi harus lebih dari Rp0!")
 
 st.sidebar.markdown("---")
-st.sidebar.info("📍 **Samarinda**\n🎯 Target Pernikahan: **2028**")
+st.sidebar.info("CATAT SEMUA PENGELUARANMU SECARA REAL TIME!!!")
 
 # --- 7. DASHBOARD UTAMA ---
 st.markdown('<p class="main-title">Aplikasi Keuangan UANGABIL TRACKER</p>', unsafe_allow_html=True)
