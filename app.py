@@ -435,7 +435,7 @@ with tab2:
                     st.warning("Data transaksi berhasil dihapus.")
                     st.rerun()
 
-# --- 8. JURNAL TRANSAKSI HARIAN (PENGELOMPOKAN BERBASIS TAB) ---
+# --- 8. JURNAL TRANSAKSI HARIAN (PENGELOMPOKAN FILTER DROPDOWN) ---
 st.markdown("---")
 st.subheader("📑 Jurnal Transaksi Harian (Firestore Cloud)")
 
@@ -444,56 +444,33 @@ if not df.empty:
     if 'nominal' in df_display.columns:
         df_display['nominal_fmt'] = df_display['nominal'].apply(format_rupiah)
     
-    # Membuat daftar tab pengelompokan secara dinamis
-    daftar_pos_keys = list(STRUKTUR_TRANSAKSI.keys())
-    nama_tabs = ["📋 Semua Transaksi"] + daftar_pos_keys
-    tabs_jurnal = st.tabs(nama_tabs)
+    # Pilihan Filter Kelompok Transaksi Pilihan Sendiri
+    daftar_pos = ["Semua Pos Transaksi"] + list(STRUKTUR_TRANSAKSI.keys())
+    pos_filter = st.selectbox("🔍 Filter Berdasarkan Kelompok Pos Transaksi:", daftar_pos)
     
-    # Tab 1: Semua Transaksi
-    with tabs_jurnal[0]:
-        total_semua = df_display['nominal'].sum()
-        st.caption(f"Menampilkan seluruh **{len(df_display)}** transaksi terhitung | Total Akumulasi: **{format_rupiah(total_semua)}**")
-        
-        cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_display.columns]
-        df_show = df_display[cols_order].sort_values(by='tanggal', ascending=False)
-        
-        st.dataframe(
-            df_show, 
-            use_container_width=True,
-            column_config={
-                "tanggal": st.column_config.TextColumn("Tanggal"),
-                "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama"),
-                "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
-                "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
-                "keterangan": st.column_config.TextColumn("Keterangan")
-            },
-            hide_index=True
-        )
+    if pos_filter != "Semua Pos Transaksi":
+        df_filtered = df_display[df_display['jenis_pengeluaran'] == pos_filter]
+    else:
+        df_filtered = df_display
 
-    # Tab 2 dan seterusnya: Berdasarkan Kelompok Pos
-    for idx, pos_name in enumerate(daftar_pos_keys, start=1):
-        with tabs_jurnal[idx]:
-            df_sub = df_display[df_display['jenis_pengeluaran'] == pos_name]
-            total_sub = df_sub['nominal'].sum() if not df_sub.empty else 0
-            
-            st.caption(f"Menampilkan **{len(df_sub)}** transaksi pada kelompok **{pos_name}** | Total Akumulasi: **{format_rupiah(total_sub)}**")
-            
-            if not df_sub.empty:
-                cols_order = [c for c in ['tanggal', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_sub.columns]
-                df_show_sub = df_sub[cols_order].sort_values(by='tanggal', ascending=False)
-                
-                st.dataframe(
-                    df_show_sub, 
-                    use_container_width=True,
-                    column_config={
-                        "tanggal": st.column_config.TextColumn("Tanggal"),
-                        "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
-                        "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
-                        "keterangan": st.column_config.TextColumn("Keterangan")
-                    },
-                    hide_index=True
-                )
-            else:
-                st.info(f"Belum ada transaksi tercatat pada pos {pos_name}.")
+    # Informasi Ringkasan Kelompok
+    total_nominal_kelompok = df_filtered['nominal'].sum() if not df_filtered.empty else 0
+    st.caption(f"Menampilkan **{len(df_filtered)}** transaksi | Total Akumulasi: **{format_rupiah(total_nominal_kelompok)}**")
+    
+    cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_filtered.columns]
+    df_show = df_filtered[cols_order].sort_values(by='tanggal', ascending=False)
+    
+    st.dataframe(
+        df_show, 
+        use_container_width=True,
+        column_config={
+            "tanggal": st.column_config.TextColumn("Tanggal"),
+            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama"),
+            "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
+            "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
+            "keterangan": st.column_config.TextColumn("Keterangan")
+        },
+        hide_index=True
+    )
 else:
     st.caption("Belum terdapat riwayat transaksi yang tersimpan.")
