@@ -35,10 +35,12 @@ PEMASUKAN_BULANAN = 8183550  # Gaji (2.938.400) + Tukin (4.595.150) + Uang Makan
 TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
-# Struktur Pengelompokan 4 Jenis Pengeluaran
+# Pengelompokan Berdasarkan 4 Jenis Pengeluaran
 STRUKTUR_PENGELUARAN = {
     "Tabungan & Investasi": {
-        "Tabungan Nikah": 2700000
+        "Tabungan Nikah": 2700000,
+        "Dana Darurat": 200000,
+        "Investasi / Reksadana": 100000
     },
     "Pengeluaran Tetap": {
         "Orang Tua (Cilacap)": 1000000,
@@ -47,14 +49,14 @@ STRUKTUR_PENGELUARAN = {
     "Pengeluaran Variabel": {
         "Pacaran": 1100000,
         "Olahraga / Minsoc": 300000,
-        "Keinginan Sendiri": 700000
+        "Keinginan Sendiri": 400000
     },
     "Pengeluaran Berkala": {
         "Dana Tak Terduga": 383550
     }
 }
 
-# Kamus Pemetaan Kategori ke Jenis
+# Pemetaan Kategori ke Jenis Pengeluaran
 KATEGORI_KE_JENIS = {}
 for jenis, kat_dict in STRUKTUR_PENGELUARAN.items():
     for kat in kat_dict.keys():
@@ -94,12 +96,12 @@ with st.sidebar.form(key='form_transaksi', clear_on_submit=True):
     # Selection 1: Jenis Pengeluaran
     jenis_selected = st.selectbox("Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
     
-    # Selection 2: Kategori Dinamis
+    # Selection 2: Kategori Dinamis berdasarkan Jenis Pengeluaran
     kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
     kategori_selected = st.selectbox("Kategori", kategori_options)
     
     nominal = st.number_input("Nominal (Rp)", min_value=0, step=10000)
-    ket = st.text_input("Keterangan", placeholder="Contoh: Bensin, Makan Korem, Main Minsoc")
+    ket = st.text_input("Keterangan", placeholder="Contoh: Bensin, Main Minsoc, Topup Bibit")
     submit = st.form_submit_button("Simpan ke Cloud Firebase")
 
     if submit and nominal > 0:
@@ -204,8 +206,7 @@ with col2:
         else:
             try:
                 genai.configure(api_key=GEMINI_KEY)
-                # Menggunakan model versi terbaru
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 data_text = merged[['jenis_pengeluaran', 'kategori', 'Budget', 'Realisasi']].to_string(index=False)
                 
                 prompt = f"""
@@ -236,7 +237,7 @@ with col2:
             except Exception as e:
                 st.error(f"Error AI: {e}")
 
-# Riwayat Transaksi
+# Riwayat Transaksi Historis
 st.markdown("---")
 st.subheader("📝 Live Transaction Log (Firestore Cloud)")
 if not df.empty:
