@@ -63,7 +63,7 @@ STRUKTUR_TRANSAKSI = {
         "Pemasukan Sampingan / Bonus": 0
     },
     "1. Pengeluaran Tetap & Masa Depan": {
-        "Kantong Tabungan Nikah": 2700000,
+        "Kantong Tabungan Nikah": 2500000,
         "Kantong Orang Tua (Cilacap)": 1000000,
         "Kantong Dana Darurat & Investasi": 300000
     },
