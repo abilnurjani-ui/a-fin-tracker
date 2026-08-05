@@ -90,10 +90,10 @@ st.sidebar.subheader("➕ Tambah Transaksi Harian")
 
 tgl = st.sidebar.date_input("Tanggal Transaksi", datetime.now())
 
-# Dropdown 1: Jenis Pos Pengeluaran (Reaktif secara Real-time)
+# Dropdown 1: Jenis Pos Pengeluaran
 jenis_selected = st.sidebar.selectbox("Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
 
-# Dropdown 2: Kategori otomatis berganti sesuai Jenis Pos yang dipilih
+# Dropdown 2: Kategori otomatis berganti sesuai Pos yang dipilih
 kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
 kategori_selected = st.sidebar.selectbox("Kategori", kategori_options)
 
@@ -206,18 +206,13 @@ with col2:
             try:
                 genai.configure(api_key=GEMINI_KEY)
                 
-                # Mekanisme Fallback Model AI
-                model = None
-                for model_name in ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-2.0-flash-exp']:
-                    try:
-                        model = genai.GenerativeModel(model_name)
-                        break
-                    except:
-                        continue
-
-                if not model:
-                    model = genai.GenerativeModel('gemini-1.5-flash')
-
+                candidate_models = [
+                    'models/gemini-1.5-flash',
+                    'models/gemini-2.0-flash',
+                    'gemini-1.5-flash'
+                ]
+                
+                res = None
                 data_text = merged[['jenis_pengeluaran', 'kategori', 'Budget', 'Realisasi']].to_string(index=False)
                 
                 prompt = f"""
@@ -240,10 +235,23 @@ with col2:
 
                 Berikan rekomendasi praktis tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
                 """
+                
                 with st.spinner("UANGABIL AI sedang menganalisis data..."):
-                    res = model.generate_content(prompt)
-                    st.markdown("---")
-                    st.markdown(res.text)
+                    for m_name in candidate_models:
+                        try:
+                            model = genai.GenerativeModel(m_name)
+                            res = model.generate_content(prompt)
+                            if res and res.text:
+                                break
+                        except Exception:
+                            continue
+                    
+                    if res and res.text:
+                        st.markdown("---")
+                        st.markdown(res.text)
+                    else:
+                        st.error("Tidak dapat terhubung ke model Gemini AI. Pastikan API Key valid.")
+                        
             except Exception as e:
                 st.error(f"Error AI: {e}")
 
