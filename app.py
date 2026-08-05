@@ -11,7 +11,7 @@ from datetime import datetime
 st.set_page_config(
     page_title="UANGABIL TRACKER", 
     layout="wide", 
-    page_icon="💍"
+    page_icon="💳"
 )
 
 # Gaya Tampilan Visual Modern
