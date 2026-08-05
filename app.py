@@ -232,7 +232,7 @@ with col2:
                 
                 with st.spinner("UANGABIL AI sedang menganalisis..."):
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-2.0-flash',
                         contents=prompt,
                     )
                     if response and response.text:
