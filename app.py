@@ -276,7 +276,6 @@ tab1, tab2 = st.tabs(["📊 Visualisasi & Analisis AI", "✏️ Kelola & Revisi 
 merged = pd.DataFrame()
 if not df_bln.empty:
     df_pengeluaran_bln = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
-    
     summary = df_pengeluaran_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index() if not df_pengeluaran_bln.empty else pd.DataFrame(columns=['jenis_pengeluaran', 'kategori', 'nominal'])
     
     budget_df = pd.DataFrame([
@@ -287,19 +286,20 @@ if not df_bln.empty:
     
     merged = pd.merge(budget_df, summary, on=['jenis_pengeluaran', 'kategori'], how='left').fillna(0)
     merged.rename(columns={'nominal': 'Realisasi'}, inplace=True)
+    
+    # Perhitungan Sisa Alokasi & Penentuan Status Otomatis
     merged['Sisa_Anggaran'] = merged['Anggaran'] - merged['Realisasi']
     
-    # Format Keterangan Status Sisa Alokasi Anggaran
-    def status_keterangan(row):
+    def hitung_status_otomatis(row):
         sisa = row['Sisa_Anggaran']
         if sisa > 0:
-            return f"🟢 Sisa {format_rupiah(sisa)}"
+            return "🟢 Aman"
         elif sisa == 0:
-            return "🟡 Habis (Pas)"
+            return "🟡 Pas"
         else:
-            return f"🔴 Overbudget {format_rupiah(abs(sisa))}"
+            return "🔴 Overbudget"
             
-    merged['Keterangan_Sisa'] = merged.apply(status_keterangan, axis=1)
+    merged['Status_Otomatis'] = merged.apply(hitung_status_otomatis, axis=1)
 
 with tab1:
     col1, col2 = st.columns([1.25, 0.75])
@@ -307,7 +307,6 @@ with tab1:
     with col1:
         st.subheader("📊 Perbandingan Anggaran dan Realisasi Per Kantong")
         if not merged.empty:
-            # Grafik Perbandingan Plotly dengan Keterangan Sisa Anggaran
             fig = px.bar(
                 merged, 
                 x='kategori', 
@@ -316,7 +315,8 @@ with tab1:
                 barmode='group',
                 hover_data={
                     'jenis_pengeluaran': True,
-                    'Keterangan_Sisa': True
+                    'Sisa_Anggaran': True,
+                    'Status_Otomatis': True
                 },
                 labels={'kategori': 'Nama Kantong', 'value': 'Nominal (Rp)', 'variable': 'Kategori'}
             )
@@ -332,20 +332,22 @@ with tab1:
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            # Tabel Rincian Sisa Alokasi Per Kantong
-            st.markdown("##### 📌 Rincian Sisa Alokasi Anggaran Per Kantong")
+            # Tabel Rincian Sisa Alokasi dan Status Per Kantong
+            st.markdown("##### 📌 Rincian Sisa Alokasi Anggaran & Status Otomatis")
             df_tabel_sisa = merged.copy()
             df_tabel_sisa['Anggaran_Fmt'] = df_tabel_sisa['Anggaran'].apply(format_rupiah)
             df_tabel_sisa['Realisasi_Fmt'] = df_tabel_sisa['Realisasi'].apply(format_rupiah)
+            df_tabel_sisa['Sisa_Fmt'] = df_tabel_sisa['Sisa_Anggaran'].apply(format_rupiah)
             
             st.dataframe(
-                df_tabel_sisa[['kategori', 'Anggaran_Fmt', 'Realisasi_Fmt', 'Keterangan_Sisa']],
+                df_tabel_sisa[['kategori', 'Anggaran_Fmt', 'Realisasi_Fmt', 'Sisa_Fmt', 'Status_Otomatis']],
                 use_container_width=True,
                 column_config={
                     "kategori": st.column_config.TextColumn("Nama Kantong"),
                     "Anggaran_Fmt": st.column_config.TextColumn("Anggaran"),
                     "Realisasi_Fmt": st.column_config.TextColumn("Terpakai"),
-                    "Keterangan_Sisa": st.column_config.TextColumn("Status / Sisa Alokasi")
+                    "Sisa_Fmt": st.column_config.TextColumn("Sisa Alokasi"),
+                    "Status_Otomatis": st.column_config.TextColumn("Status")
                 },
                 hide_index=True
             )
@@ -362,7 +364,7 @@ with tab1:
             else:
                 try:
                     client = genai.Client(api_key=GEMINI_KEY)
-                    data_text = merged[['jenis_pengeluaran', 'kategori', 'Anggaran', 'Realisasi', 'Sisa_Anggaran', 'Keterangan_Sisa']].to_string(index=False) if not merged.empty else "Belum ada pengeluaran."
+                    data_text = merged[['jenis_pengeluaran', 'kategori', 'Anggaran', 'Realisasi', 'Sisa_Anggaran', 'Status_Otomatis']].to_string(index=False) if not merged.empty else "Belum ada pengeluaran."
                     
                     prompt = f"""
                     Analisis Keuangan Bulanan UANGABIL TRACKER:
@@ -370,10 +372,10 @@ with tab1:
                     - Total Pengeluaran Bulan Ini: {format_rupiah(total_pengeluaran_bln)}
                     - Sisa Saldo Kas: {format_rupiah(sisa_uang)}
 
-                    Data Per Kantong Keuangan & Sisa Alokasinya:
+                    Data Per Kantong Keuangan, Sisa Alokasi & Status Otomatisnya:
                     {data_text}
 
-                    Berikan evaluasi yang baku, profesional, dan obyektif mengenai kondisi pemasukan vs pengeluaran serta rekomendasi kantong mana saja yang masih aman dan mana yang harus dihemat.
+                    Berikan evaluasi baku, profesional, dan obyektif mengenai kondisi pemasukan vs pengeluaran serta rekomendasi pengendalian anggaran.
                     """
                     
                     with st.spinner("Sistem AI sedang menganalisis data keuangan Anda..."):
@@ -433,7 +435,7 @@ with tab2:
                     st.warning("Data transaksi berhasil dihapus.")
                     st.rerun()
 
-# --- 8. JURNAL TRANSAKSI HARIAN (PENGELOMPOKAN DENGAN FILTER & TAB) ---
+# --- 8. JURNAL TRANSAKSI HARIAN (PENGELOMPOKAN BERBASIS TAB) ---
 st.markdown("---")
 st.subheader("📑 Jurnal Transaksi Harian (Firestore Cloud)")
 
@@ -442,33 +444,56 @@ if not df.empty:
     if 'nominal' in df_display.columns:
         df_display['nominal_fmt'] = df_display['nominal'].apply(format_rupiah)
     
-    # Pilihan Filter Kelompok Transaksi
-    daftar_pos = ["Semua Pos Transaksi"] + list(STRUKTUR_TRANSAKSI.keys())
-    pos_filter = st.selectbox("🔍 Filter Berdasarkan Kelompok Pos Transaksi:", daftar_pos)
+    # Membuat daftar tab pengelompokan secara dinamis
+    daftar_pos_keys = list(STRUKTUR_TRANSAKSI.keys())
+    nama_tabs = ["📋 Semua Transaksi"] + daftar_pos_keys
+    tabs_jurnal = st.tabs(nama_tabs)
     
-    if pos_filter != "Semua Pos Transaksi":
-        df_filtered = df_display[df_display['jenis_pengeluaran'] == pos_filter]
-    else:
-        df_filtered = df_display
+    # Tab 1: Semua Transaksi
+    with tabs_jurnal[0]:
+        total_semua = df_display['nominal'].sum()
+        st.caption(f"Menampilkan seluruh **{len(df_display)}** transaksi terhitung | Total Akumulasi: **{format_rupiah(total_semua)}**")
+        
+        cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_display.columns]
+        df_show = df_display[cols_order].sort_values(by='tanggal', ascending=False)
+        
+        st.dataframe(
+            df_show, 
+            use_container_width=True,
+            column_config={
+                "tanggal": st.column_config.TextColumn("Tanggal"),
+                "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama"),
+                "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
+                "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
+                "keterangan": st.column_config.TextColumn("Keterangan")
+            },
+            hide_index=True
+        )
 
-    # Informasi Ringkasan Kelompok
-    total_nominal_kelompok = df_filtered['nominal'].sum() if not df_filtered.empty else 0
-    st.caption(f"Menampilkan **{len(df_filtered)}** transaksi | Total Akumulasi: **{format_rupiah(total_nominal_kelompok)}**")
-    
-    cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_filtered.columns]
-    df_show = df_filtered[cols_order].sort_values(by='tanggal', ascending=False)
-    
-    st.dataframe(
-        df_show, 
-        use_container_width=True,
-        column_config={
-            "tanggal": st.column_config.TextColumn("Tanggal"),
-            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama"),
-            "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
-            "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
-            "keterangan": st.column_config.TextColumn("Keterangan")
-        },
-        hide_index=True
-    )
+    # Tab 2 dan seterusnya: Berdasarkan Kelompok Pos
+    for idx, pos_name in enumerate(daftar_pos_keys, start=1):
+        with tabs_jurnal[idx]:
+            df_sub = df_display[df_display['jenis_pengeluaran'] == pos_name]
+            total_sub = df_sub['nominal'].sum() if not df_sub.empty else 0
+            
+            st.caption(f"Menampilkan **{len(df_sub)}** transaksi pada kelompok **{pos_name}** | Total Akumulasi: **{format_rupiah(total_sub)}**")
+            
+            if not df_sub.empty:
+                cols_order = [c for c in ['tanggal', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_sub.columns]
+                df_show_sub = df_sub[cols_order].sort_values(by='tanggal', ascending=False)
+                
+                st.dataframe(
+                    df_show_sub, 
+                    use_container_width=True,
+                    column_config={
+                        "tanggal": st.column_config.TextColumn("Tanggal"),
+                        "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
+                        "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
+                        "keterangan": st.column_config.TextColumn("Keterangan")
+                    },
+                    hide_index=True
+                )
+            else:
+                st.info(f"Belum ada transaksi tercatat pada pos {pos_name}.")
 else:
     st.caption("Belum terdapat riwayat transaksi yang tersimpan.")
