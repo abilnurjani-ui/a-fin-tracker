@@ -72,9 +72,9 @@ STRUKTUR_TRANSAKSI = {
     },
     "3. Pengeluaran Dinamis / Variabel": {
         "Kantong Kebutuhan Pokok": 2000000,
-        "Kantong Pacaran": 1100000,
-        "Kantong Olahraga & Olah Raga": 300000,
-        "Kantong Keinginan Pribadi": 400000
+        "Kantong Pacaran": 1000000,
+        "Kantong Olahraga": 300000,
+        "Kantong Keinginan Pribadi": 500000
     }
 }
 
