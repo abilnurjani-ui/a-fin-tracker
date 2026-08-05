@@ -11,7 +11,7 @@ from datetime import datetime
 st.set_page_config(
     page_title="UANGABIL TRACKER", 
     layout="wide", 
-    page_icon="💳"
+    page_icon="💍"
 )
 
 # Gaya Tampilan Visual Modern
@@ -54,7 +54,6 @@ PEMASUKAN_BULANAN = 8183550  # Total Gaji, Tukin, dan Uang Makan
 TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
-# Pembagian Kantong Keuangan Berdasarkan 3 Pos Utama
 STRUKTUR_PENGELUARAN = {
     "1. Pengeluaran Tetap & Masa Depan": {
         "Kantong Tabungan Nikah": 2700000,
@@ -72,7 +71,6 @@ STRUKTUR_PENGELUARAN = {
     }
 }
 
-# Pemetaan Kategori ke Jenis Pos Pengeluaran
 KATEGORI_KE_JENIS = {}
 for jenis, kat_dict in STRUKTUR_PENGELUARAN.items():
     for kat in kat_dict.keys():
@@ -80,8 +78,8 @@ for jenis, kat_dict in STRUKTUR_PENGELUARAN.items():
 
 # --- 4. FUNGSIONALITAS FORMAT UANG SESUAI STANDAR PERBANKAN ---
 def format_rupiah(nominal):
-    """Format angka menjadi Rupiah standar Perbankan Indonesia."""
-    if pd.isna(nominal):
+    """Format angka menjadi Rupiah standar Perbankan Indonesia (contoh: Rp1.000.000)."""
+    if pd.isna(nominal) or nominal is None:
         return "Rp0"
     return f"Rp{int(nominal):,}".replace(",", ".")
 
@@ -136,19 +134,31 @@ jenis_selected = st.sidebar.selectbox("Pos Pengeluaran Utama", list(STRUKTUR_PEN
 kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
 kategori_selected = st.sidebar.selectbox("Nama Kantong", kategori_options)
 
-nominal = st.sidebar.number_input("Nominal Transaksi (Rp)", min_value=0, step=10000)
+# Input Nominal dengan format angka rapi
+nominal = st.sidebar.number_input(
+    "Nominal Transaksi (Rp)", 
+    min_value=0, 
+    step=10000, 
+    value=0,
+    help="Masukkan nominal transaksi"
+)
+
+# Indikator Otomatis Format Resmi Rupiah saat mengetik
+if nominal > 0:
+    st.sidebar.info(f"Format Resmi: **{format_rupiah(nominal)}**")
+
 ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Belanja bahan pokok, kopi, olahraga")
 
 if st.sidebar.button("Simpan ke Kantong", use_container_width=True, type="primary"):
     if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
-        st.sidebar.success("Transaksi berhasil disimpan!")
+        st.sidebar.success(f"Berhasil menyimpan {format_rupiah(nominal)} ke {kategori_selected}!")
         st.rerun()
     else:
         st.sidebar.warning("Nominal transaksi harus lebih dari Rp0!")
 
 st.sidebar.markdown("---")
-st.sidebar.info("📍 **Samarinda**\n🎯 Target Pernikahan: **2028**")
+st.sidebar.info("📍 **BMKG Samarinda**\n🎯 Target Pernikahan: **2028**")
 
 # --- 7. DASHBOARD UTAMA ---
 st.markdown('<p class="main-title">Aplikasi Keuangan UANGABIL TRACKER</p>', unsafe_allow_html=True)
@@ -345,7 +355,9 @@ with tab2:
             e_kat = st.selectbox("Nama Kantong", e_kat_options, index=e_kat_options.index(selected_row['kategori']) if selected_row['kategori'] in e_kat_options else 0)
         
         with col_edit2:
-            e_nom = st.number_input("Nominal Transaksi (Rp)", value=float(selected_row['nominal']), step=10000.0)
+            e_nom = st.number_input("Nominal Transaksi (Rp)", value=int(selected_row['nominal']), step=10000)
+            st.info(f"Format Resmi: **{format_rupiah(e_nom)}**")
+            
             e_ket = st.text_input("Keterangan", value=str(selected_row['keterangan']) if pd.notna(selected_row['keterangan']) else "")
             
             st.markdown("<br>", unsafe_allow_html=True)
