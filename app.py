@@ -11,14 +11,36 @@ from datetime import datetime
 st.set_page_config(
     page_title="UANGABIL TRACKER", 
     layout="wide", 
-    page_icon="📈"
+    page_icon="💍"
 )
 
-# Custom Styling UI Modern
+# Custom Styling UI Modern & Interaktif
 st.markdown("""
     <style>
-    .main-title { font-size: 2.2rem; font-weight: 700; color: #1E293B; margin-bottom: 0px; }
-    .sub-title { font-size: 1rem; color: #64748B; margin-bottom: 20px; }
+    /* Styling Umum */
+    .main-title { font-size: 2.3rem; font-weight: 800; color: #1E293B; margin-bottom: 2px; }
+    .sub-title { font-size: 1.05rem; color: #64748B; margin-bottom: 25px; }
+    
+    /* Custom Card Metric */
+    .metric-card {
+        background: #FFFFFF;
+        padding: 18px 22px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        border: 1px solid #E2E8F0;
+        text-align: left;
+    }
+    .metric-label { font-size: 0.88rem; font-weight: 600; color: #64748B; margin-bottom: 6px; }
+    .metric-val { font-size: 1.6rem; font-weight: 800; color: #0F172A; }
+    
+    /* Card Target Nikah */
+    .target-card {
+        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        padding: 22px 25px;
+        border-radius: 18px;
+        border: 1px solid #BFDBFE;
+        margin-bottom: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -32,7 +54,7 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 # --- 3. CONFIG PEMASUKAN & STRUKTUR 3 POS PENGELUARAN ---
-PEMASUKAN_BULANAN = 8183550  # Gaji (2.938.400) + Tukin (4.595.150) + Uang Makan (650.000)
+PEMASUKAN_BULANAN = 8183550  # Gaji + Tukin + Uang Makan
 TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
@@ -82,36 +104,39 @@ def ambil_semua_transaksi():
         return df_temp
     return pd.DataFrame()
 
-# --- 5. SIDEBAR: INPUT DINAMIS ---
-st.sidebar.markdown("## 📊 **UANGABIL TRACKER**")
-st.sidebar.caption("Financial Command Center")
+# --- 5. SIDEBAR: INPUT DINAMIS & USER PROFILE ---
+st.sidebar.markdown("## 💳 **UANGABIL TRACKER**")
+st.sidebar.caption("✨ Personal Financial Command Center")
 st.sidebar.markdown("---")
 
-st.sidebar.subheader("➕ Tambah Transaksi Harian")
+st.sidebar.subheader("➕ Catat Transaksi Baru")
 
-tgl = st.sidebar.date_input("Tanggal Transaksi", datetime.now())
+tgl = st.sidebar.date_input("📅 Tanggal Transaksi", datetime.now())
 
 # Dropdown 1: Jenis Pos Pengeluaran
-jenis_selected = st.sidebar.selectbox("Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
+jenis_selected = st.sidebar.selectbox("📂 Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
 
-# Dropdown 2: Kategori otomatis berganti sesuai Pos yang dipilih
+# Dropdown 2: Kategori reaktif
 kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
-kategori_selected = st.sidebar.selectbox("Kategori", kategori_options)
+kategori_selected = st.sidebar.selectbox("🏷️ Kategori Sub-Pos", kategori_options)
 
-nominal = st.sidebar.number_input("Nominal (Rp)", min_value=0, step=10000)
-ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Bensin, Main Minsoc, Topup Bibit")
+nominal = st.sidebar.number_input("💵 Nominal (Rp)", min_value=0, step=10000)
+ket = st.sidebar.text_input("📝 Catatan Singkat", placeholder="Cth: Bensin, Nasi Padang, Minsoc")
 
-if st.sidebar.button("Simpan ke Cloud Firebase", type="primary"):
+if st.sidebar.button("🚀 Simpan Transaksi", use_container_width=True, type="primary"):
     if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
-        st.sidebar.success("Berhasil tersimpan di Firebase!")
+        st.sidebar.success("✅ Yess! Transaksi berhasil dicatat di Cloud.")
         st.rerun()
     else:
-        st.sidebar.warning("Nominal harus lebih dari 0!")
+        st.sidebar.warning("⚠️ Nominalnya isi dulu ya!")
+
+st.sidebar.markdown("---")
+st.sidebar.info("📍 **BMKG Samarinda**\n🎯 Target Akad Nikah: **2028**")
 
 # --- 6. DASHBOARD UTAMA ---
-st.markdown('<p class="main-title">📈 UANGABIL TRACKER</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Personal Finance & Marriage Target Preparedness 2028</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">👋 Halo, Abil! Semangat Financial Goals 2028!</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Pantau arus kas harian dan alokasi tabungan nikahmu secara real-time di sini.</p>', unsafe_allow_html=True)
 
 df = ambil_semua_transaksi()
 
@@ -129,43 +154,84 @@ if not df.empty and 'tanggal' in df.columns:
 
 sisa_uang = PEMASUKAN_BULANAN - total_pengeluaran_bln
 
-# Ringkasan Kas
-st.markdown("### 💵 Ringkasan Kas Bulan Ini")
+# Ringkasan Kas (Cards Minimalis Visual)
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
-    st.metric("Total Pemasukan", f"Rp {PEMASUKAN_BULANAN:,.0f}")
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">💵 Total Pemasukan</div>
+        <div class="metric-val">Rp {PEMASUKAN_BULANAN:,.0f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col_m2:
-    st.metric("Total Pengeluaran", f"Rp {total_pengeluaran_bln:,.0f}")
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">💸 Total Pengeluaran</div>
+        <div class="metric-val" style="color:#E11D48;">Rp {total_pengeluaran_bln:,.0f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col_m3:
-    st.metric("Sisa Dana (Balance)", f"Rp {sisa_uang:,.0f}")
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">💰 Sisa Dana Saldo</div>
+        <div class="metric-val" style="color:#2563EB;">Rp {sisa_uang:,.0f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 with col_m4:
     if sisa_uang > 0:
-        st.success("🟢 SURPLUS")
+        st.markdown("""
+        <div class="metric-card" style="background:#F0FDF4; border-color:#BBF7D0;">
+            <div class="metric-label" style="color:#166534;">🟢 Status Kas</div>
+            <div class="metric-val" style="color:#15803D;">SURPLUS</div>
+        </div>
+        """, unsafe_allow_html=True)
     elif sisa_uang == 0:
-        st.info("🔵 BALANCE")
+        st.markdown("""
+        <div class="metric-card" style="background:#EFF6FF; border-color:#BFDBFE;">
+            <div class="metric-label" style="color:#1E40AF;">🔵 Status Kas</div>
+            <div class="metric-val" style="color:#1D4ED8;">BALANCE</div>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        st.error(f"🔴 DEFISIT (Over: Rp {abs(sisa_uang):,.0f})")
+        st.markdown(f"""
+        <div class="metric-card" style="background:#FEF2F2; border-color:#FECACA;">
+            <div class="metric-label" style="color:#991B1B;">🔴 Status Kas</div>
+            <div class="metric-val" style="color:#DC2626;">DEFISIT</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 
-# Progress Target Nikah
-st.markdown("### 🎯 Progress Target Nikah (Rp 100 Juta)")
+# Progress Target Nikah (Desain Khusus Interaktif)
 total_nikah = 0
 if not df.empty and 'kategori' in df.columns:
     total_nikah = df[df['kategori'] == 'Tabungan Nikah']['nominal'].sum()
 
 progress = min(float(total_nikah / TARGET_NIKAH), 1.0)
-col_p1, col_p2 = st.columns([3, 1])
-with col_p1:
-    st.progress(progress)
-with col_p2:
-    st.metric("Terkumpul", f"Rp {total_nikah:,.0f}", f"{(progress*100):.1f}%")
+persen = progress * 100
+
+st.markdown(f"""
+<div class="target-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span style="font-size: 1.25rem; font-weight: 700; color: #1E3A8A;">💍 Target Tabungan Nikah 2028 (Rp 100 Juta)</span>
+        <span style="font-size: 1.1rem; font-weight: 800; color: #2563EB; background: #FFFFFF; padding: 4px 12px; border-radius: 20px;">{persen:.1f}% Terkumpul</span>
+    </div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: #0F172A; margin-bottom: 8px;">
+        Rp {total_nikah:,.0f} <span style="font-size: 1rem; color: #64748B; font-weight: 500;">/ Rp 100,000,000</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.progress(progress)
 
 st.markdown("---")
 
 # Visualisasi & AI Analyst
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([1.1, 0.9])
 
 merged = pd.DataFrame()
 if not df_bln.empty:
@@ -185,24 +251,30 @@ with col1:
             merged, 
             x='kategori', 
             y=['Budget', 'Realisasi'], 
-            color_discrete_sequence=['#94A3B8', '#2563EB'],
+            color_discrete_sequence=['#CBD5E1', '#2563EB'],
             barmode='group', 
             hover_data=['jenis_pengeluaran'],
-            labels={'value': 'Rupiah', 'kategori': 'Kategori'}
+            labels={'value': 'Rupiah (Rp)', 'kategori': 'Kategori Pos'}
+        )
+        fig.update_layout(
+            legend_title_text='',
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("Belum ada data transaksi bulan ini.")
+        st.info("💡 Belum ada data transaksi untuk bulan ini. Mulai catat di sidebar yuk!")
 
 with col2:
     st.subheader("🤖 UANGABIL AI Advisor")
-    st.write("Analisis otomatis berdasarkan 3 pos pengeluaran utama Anda.")
+    st.caption("Asisten finansial pribadi untuk menjaga kesehatan pos keuanganmu.")
     
-    if st.button("🔍 Analisis Keuangan Saya via AI"):
+    if st.button("🔍 Minta Saran Keuangan Saya", use_container_width=True, type="secondary"):
         if not GEMINI_KEY:
-            st.error("Atur GEMINI_API_KEY di Streamlit Secrets!")
+            st.error("🔑 Jangan lupa atur GEMINI_API_KEY di Streamlit Secrets!")
         elif merged.empty:
-            st.warning("Belum ada data transaksi bulan ini.")
+            st.warning("⚠️ Masukkan transaksi bulan ini dulu sebelum konsultasi AI!")
         else:
             try:
                 client = genai.Client(api_key=GEMINI_KEY)
@@ -221,15 +293,15 @@ with col2:
                 - Rutin kirim ke Orang Tua Cilacap (Rp 1.000.000).
                 - Target Dana Nikah 2028: Rp 100.000.000.
 
-                Lakukan evaluasi terstruktur berdasarkan 3 Jenis Pos Pengeluaran:
-                1. Pengeluaran Tetap & Masa Depan (Pastikan Tabungan Nikah & Orang Tua Cilacap tidak terganggu).
+                Lakukan evaluasi terstruktur dan ramah berdasarkan 3 Jenis Pos Pengeluaran:
+                1. Pengeluaran Tetap & Masa Depan (Pastikan Tabungan Nikah & Orang Tua Cilacap aman).
                 2. Pengeluaran Berkala (Cek kesiapan Dana Tak Terduga).
                 3. Pengeluaran Dinamis / Variabel (Evaluasi potensi kebocoran di pos Kebutuhan Pokok, Pacaran, Olahraga/Minsoc, dan Keinginan Sendiri).
 
-                Berikan rekomendasi praktis tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
+                Berikan rekomendasi praktis, santai, namun tegas tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
                 """
                 
-                with st.spinner("UANGABIL AI sedang menganalisis..."):
+                with st.spinner("🧠 AI Advisor sedang menghitung alokasi bisnismu..."):
                     response = client.models.generate_content(
                         model='gemini-2.0-flash',
                         contents=prompt,
@@ -238,23 +310,25 @@ with col2:
                         st.markdown("---")
                         st.markdown(response.text)
                     else:
-                        st.error("Gagal mendapatkan respon dari AI.")
+                        st.error("Gagal mendapat tanggapan dari AI.")
                         
             except APIError as e:
                 if e.code == 429 or "RESOURCE_EXHAUSTED" in str(e):
-                    st.warning("⏳ Kuota API gratisan sedang mencapai batas per menit (Rate Limit). Silakan tunggu sekitar 30 detik lalu klik tombol analisis lagi.")
+                    st.warning("⏳ **Kuota AI Sedang Rehat Sejenak:** Batas gratis per menit tercapai. Silakan tunggu sekitar 20-30 detik lalu klik tombol analisis lagi ya!")
                 else:
                     st.error(f"API Error ({e.code}): {e.message}")
             except Exception as e:
                 if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                    st.warning("⏳ Kuota API gratisan sedang mencapai batas per menit (Rate Limit). Silakan tunggu sekitar 30 detik lalu klik tombol analisis lagi.")
+                    st.warning("⏳ **Kuota AI Sedang Rehat Sejenak:** Batas gratis per menit tercapai. Silakan tunggu sekitar 20-30 detik lalu klik tombol analisis lagi ya!")
                 else:
                     st.error(f"Error AI: {e}")
 
 # Riwayat Transaksi Historis
 st.markdown("---")
-st.subheader("📝 Live Transaction Log (Firestore Cloud)")
+st.subheader("📑 Jurnal Transaksi Harian (Firestore Cloud)")
 if not df.empty:
     cols_to_show = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal', 'keterangan'] if c in df.columns]
     display_df = df[cols_to_show]
     st.dataframe(display_df.sort_values(by='tanggal', ascending=False), use_container_width=True)
+else:
+    st.caption("Belum ada riwayat transaksi yang tersimpan.")
