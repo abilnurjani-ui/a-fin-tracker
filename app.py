@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from google import genai
+from google.genai.errors import APIError
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
@@ -204,9 +205,7 @@ with col2:
             st.warning("Belum ada data transaksi bulan ini.")
         else:
             try:
-                # Inisialisasi Google GenAI Client SDK Resmi
                 client = genai.Client(api_key=GEMINI_KEY)
-
                 data_text = merged[['jenis_pengeluaran', 'kategori', 'Budget', 'Realisasi']].to_string(index=False)
                 
                 prompt = f"""
@@ -241,8 +240,16 @@ with col2:
                     else:
                         st.error("Gagal mendapatkan respon dari AI.")
                         
+            except APIError as e:
+                if e.code == 429 or "RESOURCE_EXHAUSTED" in str(e):
+                    st.warning("⏳ Kuota API gratisan sedang mencapai batas per menit (Rate Limit). Silakan tunggu sekitar 30 detik lalu klik tombol analisis lagi.")
+                else:
+                    st.error(f"API Error ({e.code}): {e.message}")
             except Exception as e:
-                st.error(f"Error AI: {e}")
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    st.warning("⏳ Kuota API gratisan sedang mencapai batas per menit (Rate Limit). Silakan tunggu sekitar 30 detik lalu klik tombol analisis lagi.")
+                else:
+                    st.error(f"Error AI: {e}")
 
 # Riwayat Transaksi Historis
 st.markdown("---")
