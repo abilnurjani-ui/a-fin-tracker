@@ -154,7 +154,7 @@ nominal = st.sidebar.number_input(
 if nominal > 0:
     st.sidebar.info(f"Format Resmi: **{format_rupiah(nominal)}**")
 
-ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Gaji Agustus, Belanja Pokok, Bonus Tukin")
+ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Belanja bahan pokok, kopi, olahraga")
 
 if st.sidebar.button("Simpan Transaksi", use_container_width=True, type="primary"):
     if nominal > 0:
@@ -277,30 +277,48 @@ merged = pd.DataFrame()
 if not df_bln.empty:
     df_pengeluaran_bln = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
     
-    if not df_pengeluaran_bln.empty:
-        summary = df_pengeluaran_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index()
-        budget_df = pd.DataFrame([
-            {"jenis_pengeluaran": j, "kategori": k, "Anggaran": b}
-            for j, k_dict in STRUKTUR_TRANSAKSI.items() if j != "0. Pemasukan Kas / Gaji"
-            for k, b in k_dict.items()
-        ])
-        merged = pd.merge(budget_df, summary, on=['jenis_pengeluaran', 'kategori'], how='left').fillna(0)
-        merged.rename(columns={'nominal': 'Realisasi'}, inplace=True)
-        merged['Sisa_Anggaran'] = merged['Anggaran'] - merged['Realisasi']
+    summary = df_pengeluaran_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index() if not df_pengeluaran_bln.empty else pd.DataFrame(columns=['jenis_pengeluaran', 'kategori', 'nominal'])
+    
+    budget_df = pd.DataFrame([
+        {"jenis_pengeluaran": j, "kategori": k, "Anggaran": b}
+        for j, k_dict in STRUKTUR_TRANSAKSI.items() if j != "0. Pemasukan Kas / Gaji"
+        for k, b in k_dict.items()
+    ])
+    
+    merged = pd.merge(budget_df, summary, on=['jenis_pengeluaran', 'kategori'], how='left').fillna(0)
+    merged.rename(columns={'nominal': 'Realisasi'}, inplace=True)
+    merged['Sisa_Anggaran'] = merged['Anggaran'] - merged['Realisasi']
+    
+    # Format Keterangan Status Sisa Alokasi Anggaran
+    def status_keterangan(row):
+        sisa = row['Sisa_Anggaran']
+        if sisa > 0:
+            return f"🟢 Sisa {format_rupiah(sisa)}"
+        elif sisa == 0:
+            return "🟡 Habis (Pas)"
+        else:
+            return f"🔴 Overbudget {format_rupiah(abs(sisa))}"
+            
+    merged['Keterangan_Sisa'] = merged.apply(status_keterangan, axis=1)
 
 with tab1:
-    col1, col2 = st.columns([1.2, 0.8])
+    col1, col2 = st.columns([1.25, 0.75])
 
     with col1:
         st.subheader("📊 Perbandingan Anggaran dan Realisasi Per Kantong")
         if not merged.empty:
+            # Grafik Perbandingan Plotly dengan Keterangan Sisa Anggaran
             fig = px.bar(
                 merged, 
                 x='kategori', 
                 y=['Anggaran', 'Realisasi'], 
                 color_discrete_sequence=['#CBD5E1', '#2563EB'],
                 barmode='group',
-                hover_data=['jenis_pengeluaran']
+                hover_data={
+                    'jenis_pengeluaran': True,
+                    'Keterangan_Sisa': True
+                },
+                labels={'kategori': 'Nama Kantong', 'value': 'Nominal (Rp)', 'variable': 'Kategori'}
             )
             fig.update_layout(
                 xaxis_title="",
@@ -313,8 +331,26 @@ with tab1:
                 xaxis=dict(tickangle=-30)
             )
             st.plotly_chart(fig, use_container_width=True)
+            
+            # Tabel Rincian Sisa Alokasi Per Kantong
+            st.markdown("##### 📌 Rincian Sisa Alokasi Anggaran Per Kantong")
+            df_tabel_sisa = merged.copy()
+            df_tabel_sisa['Anggaran_Fmt'] = df_tabel_sisa['Anggaran'].apply(format_rupiah)
+            df_tabel_sisa['Realisasi_Fmt'] = df_tabel_sisa['Realisasi'].apply(format_rupiah)
+            
+            st.dataframe(
+                df_tabel_sisa[['kategori', 'Anggaran_Fmt', 'Realisasi_Fmt', 'Keterangan_Sisa']],
+                use_container_width=True,
+                column_config={
+                    "kategori": st.column_config.TextColumn("Nama Kantong"),
+                    "Anggaran_Fmt": st.column_config.TextColumn("Anggaran"),
+                    "Realisasi_Fmt": st.column_config.TextColumn("Terpakai"),
+                    "Keterangan_Sisa": st.column_config.TextColumn("Status / Sisa Alokasi")
+                },
+                hide_index=True
+            )
         else:
-            st.info("💡 Belum terdapat transaksi pengeluaran pada bulan berjalan.")
+            st.info("💡 Belum terdapat data anggaran pada bulan berjalan.")
 
     with col2:
         st.subheader("🤖 Penasihat Keuangan AI")
@@ -326,7 +362,7 @@ with tab1:
             else:
                 try:
                     client = genai.Client(api_key=GEMINI_KEY)
-                    data_text = merged[['jenis_pengeluaran', 'kategori', 'Anggaran', 'Realisasi', 'Sisa_Anggaran']].to_string(index=False) if not merged.empty else "Belum ada pengeluaran."
+                    data_text = merged[['jenis_pengeluaran', 'kategori', 'Anggaran', 'Realisasi', 'Sisa_Anggaran', 'Keterangan_Sisa']].to_string(index=False) if not merged.empty else "Belum ada pengeluaran."
                     
                     prompt = f"""
                     Analisis Keuangan Bulanan UANGABIL TRACKER:
@@ -334,10 +370,10 @@ with tab1:
                     - Total Pengeluaran Bulan Ini: {format_rupiah(total_pengeluaran_bln)}
                     - Sisa Saldo Kas: {format_rupiah(sisa_uang)}
 
-                    Data Per Kantong Keuangan:
+                    Data Per Kantong Keuangan & Sisa Alokasinya:
                     {data_text}
 
-                    Berikan evaluasi yang baku, profesional, dan obyektif mengenai kondisi pemasukan vs pengeluaran serta rekomendasi pengelolaan kas bulanan.
+                    Berikan evaluasi yang baku, profesional, dan obyektif mengenai kondisi pemasukan vs pengeluaran serta rekomendasi kantong mana saja yang masih aman dan mana yang harus dihemat.
                     """
                     
                     with st.spinner("Sistem AI sedang menganalisis data keuangan Anda..."):
@@ -397,7 +433,7 @@ with tab2:
                     st.warning("Data transaksi berhasil dihapus.")
                     st.rerun()
 
-# Jurnal Transaksi Harian
+# --- 8. JURNAL TRANSAKSI HARIAN (PENGELOMPOKAN DENGAN FILTER & TAB) ---
 st.markdown("---")
 st.subheader("📑 Jurnal Transaksi Harian (Firestore Cloud)")
 
@@ -406,18 +442,33 @@ if not df.empty:
     if 'nominal' in df_display.columns:
         df_display['nominal_fmt'] = df_display['nominal'].apply(format_rupiah)
     
-    cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_display.columns]
-    df_show = df_display[cols_order].sort_values(by='tanggal', ascending=False)
+    # Pilihan Filter Kelompok Transaksi
+    daftar_pos = ["Semua Pos Transaksi"] + list(STRUKTUR_TRANSAKSI.keys())
+    pos_filter = st.selectbox("🔍 Filter Berdasarkan Kelompok Pos Transaksi:", daftar_pos)
+    
+    if pos_filter != "Semua Pos Transaksi":
+        df_filtered = df_display[df_display['jenis_pengeluaran'] == pos_filter]
+    else:
+        df_filtered = df_display
+
+    # Informasi Ringkasan Kelompok
+    total_nominal_kelompok = df_filtered['nominal'].sum() if not df_filtered.empty else 0
+    st.caption(f"Menampilkan **{len(df_filtered)}** transaksi | Total Akumulasi: **{format_rupiah(total_nominal_kelompok)}**")
+    
+    cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_filtered.columns]
+    df_show = df_filtered[cols_order].sort_values(by='tanggal', ascending=False)
     
     st.dataframe(
         df_show, 
         use_container_width=True,
         column_config={
             "tanggal": st.column_config.TextColumn("Tanggal"),
-            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi"),
+            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama"),
             "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
             "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
             "keterangan": st.column_config.TextColumn("Keterangan")
         },
         hide_index=True
     )
+else:
+    st.caption("Belum terdapat riwayat transaksi yang tersimpan.")
