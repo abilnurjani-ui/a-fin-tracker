@@ -35,7 +35,7 @@ PEMASUKAN_BULANAN = 8183550  # Gaji (2.938.400) + Tukin (4.595.150) + Uang Makan
 TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
-# Struktur Pengelompokan 3 Pos Pengeluaran
+# Struktur Pengelompokan 3 Pos Pengeluaran Utama
 STRUKTUR_PENGELUARAN = {
     "1. Pengeluaran Tetap & Masa Depan": {
         "Tabungan Nikah": 2700000,
@@ -90,10 +90,10 @@ st.sidebar.subheader("➕ Tambah Transaksi Harian")
 
 tgl = st.sidebar.date_input("Tanggal Transaksi", datetime.now())
 
-# Selection 1: Jenis Pos Pengeluaran (Luar Form agar Reaktif Dinamis)
+# Dropdown 1: Jenis Pos Pengeluaran (Reaktif secara Real-time)
 jenis_selected = st.sidebar.selectbox("Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
 
-# Selection 2: Kategori otomatis berubah sesuai Pos yang dipilih
+# Dropdown 2: Kategori otomatis berganti sesuai Jenis Pos yang dipilih
 kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
 kategori_selected = st.sidebar.selectbox("Kategori", kategori_options)
 
@@ -205,7 +205,19 @@ with col2:
         else:
             try:
                 genai.configure(api_key=GEMINI_KEY)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                # Mekanisme Fallback Model AI
+                model = None
+                for model_name in ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-2.0-flash-exp']:
+                    try:
+                        model = genai.GenerativeModel(model_name)
+                        break
+                    except:
+                        continue
+
+                if not model:
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+
                 data_text = merged[['jenis_pengeluaran', 'kategori', 'Budget', 'Realisasi']].to_string(index=False)
                 
                 prompt = f"""
