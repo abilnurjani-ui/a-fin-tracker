@@ -7,35 +7,70 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
 
-# --- 1. KONFIGURASI HALAMAN DAN TEMA ---
+# --- 1. KONFIGURASI HALAMAN DAN TEMA MASKULIN GAUL ---
 st.set_page_config(
-    page_title="UANGABIL TRACKER", 
+    page_title="UANGABIL TRACKER | BRO MODE 🕶️", 
     layout="wide", 
-    page_icon="💳"
+    page_icon="🕶️"
 )
 
-# Gaya Tampilan Visual Modern
+# Gaya Tampilan Visual Dark Modern & Masculine
 st.markdown("""
     <style>
-    .main-title { font-size: 2.1rem; font-weight: 800; color: #0F172A; margin-bottom: 2px; }
-    .sub-title { font-size: 1rem; color: #64748B; margin-bottom: 20px; }
-    
-    .metric-card {
-        background: #FFFFFF;
-        padding: 16px 20px;
-        border-radius: 16px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        border: 1px solid #E2E8F0;
+    /* Styling Latar Belakang & Tipografi Utama */
+    .main-title { 
+        font-size: 2.3rem; 
+        font-weight: 900; 
+        color: #0284C7; 
+        margin-bottom: 2px;
+        letter-spacing: -0.5px;
+        text-transform: uppercase;
     }
-    .metric-label { font-size: 0.85rem; font-weight: 600; color: #64748B; margin-bottom: 4px; }
-    .metric-val { font-size: 1.45rem; font-weight: 800; color: #0F172A; }
+    .sub-title { 
+        font-size: 1rem; 
+        color: #64748B; 
+        margin-bottom: 22px; 
+        font-weight: 600;
+    }
     
+    /* Kartu Metrik Maskulin Minimalis */
+    .metric-card {
+        background: #0F172A;
+        padding: 18px 22px;
+        border-radius: 16px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid #334155;
+    }
+    .metric-label { 
+        font-size: 0.85rem; 
+        font-weight: 800; 
+        color: #94A3B8; 
+        margin-bottom: 6px; 
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .metric-val { 
+        font-size: 1.55rem; 
+        font-weight: 900; 
+        color: #F8FAFC; 
+    }
+    
+    /* Kartu Target Pernikahan Bold Tech */
     .target-card {
-        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-        padding: 20px 24px;
-        border-radius: 18px;
-        border: 1px solid #BFDBFE;
-        margin-bottom: 15px;
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        padding: 22px 26px;
+        border-radius: 20px;
+        border: 2px solid #0284C7;
+        margin-bottom: 18px;
+    }
+
+    /* Penyesuaian Tombol Maskulin */
+    .stButton>button {
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        padding: 10px 20px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -130,46 +165,46 @@ def ambil_semua_transaksi():
     return pd.DataFrame()
 
 # --- 6. BILAH SISI (SIDEBAR): INPUT TRANSAKSI ---
-st.sidebar.markdown("## 💳 **UANGABIL TRACKER**")
-st.sidebar.caption("Sistem Manajemen Keuangan Berbasis Kantong")
+st.sidebar.markdown("## ⚡ **UANGABIL TRACKER**")
+st.sidebar.caption("Financial Command Center Bro! 🕶️")
 st.sidebar.markdown("---")
 
-st.sidebar.subheader("➕ Pencatatan Transaksi Baru")
+st.sidebar.subheader("➕ Catat Cashflow Baru 💸")
 
-tgl = st.sidebar.date_input("Tanggal Transaksi", datetime.now())
-jenis_selected = st.sidebar.selectbox("Pos Transaksi Utama", list(STRUKTUR_TRANSAKSI.keys()))
+tgl = st.sidebar.date_input("Tanggal Transaksi 📅", datetime.now())
+jenis_selected = st.sidebar.selectbox("Pos Transaksi Utama 📑", list(STRUKTUR_TRANSAKSI.keys()))
 kategori_options = list(STRUKTUR_TRANSAKSI[jenis_selected].keys())
-kategori_selected = st.sidebar.selectbox("Nama Kantong / Kategori", kategori_options)
+kategori_selected = st.sidebar.selectbox("Nama Kantong / Pos 🎯", kategori_options)
 
 # Input Nominal dengan format angka rapi
 nominal = st.sidebar.number_input(
-    "Nominal Transaksi (Rp)", 
+    "Nominal Transaksi (Rp) 💵", 
     min_value=0, 
     step=10000, 
     value=0,
-    help="Masukkan nominal transaksi"
+    help="Masukkan nominal pengeluaran/pemasukan"
 )
 
 # Indikator Otomatis Format Resmi Rupiah saat mengetik
 if nominal > 0:
-    st.sidebar.info(f"Format Resmi: **{format_rupiah(nominal)}**")
+    st.sidebar.info(f"Nominal: **{format_rupiah(nominal)}** 🔥")
 
-ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Belanja bahan pokok, kopi, olahraga")
+ket = st.sidebar.text_input("Keterangan 📝", placeholder="Contoh: Bensin, kopi, gym, pacaran")
 
-if st.sidebar.button("Simpan Transaksi", use_container_width=True, type="primary"):
+if st.sidebar.button("🚀 Push Transaksi", use_container_width=True, type="primary"):
     if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
-        st.sidebar.success(f"Berhasil menyimpan {format_rupiah(nominal)} ke {kategori_selected}!")
+        st.sidebar.success(f"Mantap Bro! {format_rupiah(nominal)} masuk ke {kategori_selected}! 👊")
         st.rerun()
     else:
-        st.sidebar.warning("Nominal transaksi harus lebih dari Rp0!")
+        st.sidebar.warning("Nominal transaksi kudu lebih dari Rp0 bro! ⚠️")
 
 st.sidebar.markdown("---")
-st.sidebar.info("CATAT SEMUA PENGELUARANMU SECARA REAL TIME!!!")
+st.sidebar.info("🔥 **DISIPLIN KEUANGAN = KUNCI FREEDOM! CATAT SEKARANG!** ⚡")
 
 # --- 7. DASHBOARD UTAMA ---
-st.markdown('<p class="main-title">Aplikasi Keuangan UANGABIL TRACKER</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Pemantauan Arus Kas Harian dan Alokasi Tabungan Pernikahan Tahun 2028</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">UANGABIL TRACKER 🏎️⚡</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Financial Monitoring & Target Tabungan Pernikahan 2028 💍🔥</p>', unsafe_allow_html=True)
 
 df = ambil_semua_transaksi()
 
@@ -201,46 +236,46 @@ else:
 
 sisa_uang = total_pemasukan_bln - total_pengeluaran_bln
 
-# Ringkasan Ikhtisar Kas Modern
+# Ringkasan Ikhtisar Kas Modern & Maskulin
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Total Pemasukan Bulan Ini</div>
-        <div class="metric-val" style="color:#16A34A;">{format_rupiah(total_pemasukan_bln)}</div>
+        <div class="metric-label">Total Inflow Bulan Ini 💰</div>
+        <div class="metric-val" style="color:#10B981;">{format_rupiah(total_pemasukan_bln)}</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col_m2:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Total Pengeluaran Bulan Ini</div>
-        <div class="metric-val" style="color:#E11D48;">{format_rupiah(total_pengeluaran_bln)}</div>
+        <div class="metric-label">Total Burn Rate (Pengeluaran) 💸</div>
+        <div class="metric-val" style="color:#EF4444;">{format_rupiah(total_pengeluaran_bln)}</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col_m3:
     st.markdown(f"""
     <div class="metric-card">
-        <div class="metric-label">Sisa Saldo Kas</div>
-        <div class="metric-val" style="color:#2563EB;">{format_rupiah(sisa_uang)}</div>
+        <div class="metric-label">Sisa Liquidity (Kas) 💳</div>
+        <div class="metric-val" style="color:#3B82F6;">{format_rupiah(sisa_uang)}</div>
     </div>
     """, unsafe_allow_html=True)
 
 with col_m4:
     if sisa_uang > 0:
         st.markdown("""
-        <div class="metric-card" style="background:#F0FDF4; border-color:#BBF7D0;">
-            <div class="metric-label" style="color:#166534;">Status Kas</div>
-            <div class="metric-val" style="color:#15803D;">SURPLUS</div>
+        <div class="metric-card" style="background:#064E3B; border-color:#059669;">
+            <div class="metric-label" style="color:#6EE7B7;">Cashflow Status ⚡</div>
+            <div class="metric-val" style="color:#34D399;">SAFE (SURPLUS) 🔥</div>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div class="metric-card" style="background:#FEF2F2; border-color:#FECACA;">
-            <div class="metric-label" style="color:#991B1B;">Status Kas</div>
-            <div class="metric-val" style="color:#DC2626;">DEFISIT</div>
+        <div class="metric-card" style="background:#4C0519; border-color:#9F1239;">
+            <div class="metric-label" style="color:#FECDD3;">Cashflow Status ⚠️</div>
+            <div class="metric-val" style="color:#F43F5E;">DANGER (DEFISIT) 🚨</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -257,11 +292,11 @@ persen = progress * 100
 st.markdown(f"""
 <div class="target-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 1.1rem; font-weight: 700; color: #1E3A8A;">🎯 Progress Target Tabungan Pernikahan Tahun 2028</span>
-        <span style="font-size: 0.95rem; font-weight: 800; color: #2563EB; background: #FFFFFF; padding: 4px 12px; border-radius: 20px;">{persen:.1f}% Terkumpul</span>
+        <span style="font-size: 1.1rem; font-weight: 900; color: #38BDF8; letter-spacing: 0.5px;">🎯 TARGET MISSION: NIKAH 2028 💍</span>
+        <span style="font-size: 0.95rem; font-weight: 900; color: #0284C7; background: #F8FAFC; padding: 6px 14px; border-radius: 12px;">{persen:.1f}% UNLOCKED ⚡</span>
     </div>
-    <div style="font-size: 1.6rem; font-weight: 800; color: #0F172A;">
-        {format_rupiah(total_nikah)} <span style="font-size: 0.9rem; color: #64748B; font-weight: 500;">/ Target {format_rupiah(TARGET_NIKAH)}</span>
+    <div style="font-size: 1.65rem; font-weight: 900; color: #F8FAFC;">
+        {format_rupiah(total_nikah)} <span style="font-size: 0.9rem; color: #94A3B8; font-weight: 600;">/ Goal {format_rupiah(TARGET_NIKAH)}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -271,7 +306,7 @@ st.progress(progress)
 st.markdown("---")
 
 # TABEL TAB: VISUALISASI DAN KELOLA
-tab1, tab2 = st.tabs(["📊 Visualisasi & Analisis AI", "✏️ Kelola & Revisi Transaksi"])
+tab1, tab2 = st.tabs(["📊 Analytics & AI Advisor 🤖", "✏️ Edit & Manage Transactions 🛠️"])
 
 merged = pd.DataFrame()
 if not df_bln.empty:
@@ -293,11 +328,11 @@ if not df_bln.empty:
     def hitung_status_otomatis(row):
         sisa = row['Sisa_Anggaran']
         if sisa > 0:
-            return "🟢 Aman"
+            return "🟢 SAFE (Aman)"
         elif sisa == 0:
-            return "🟡 Pas"
+            return "🟡 ON POINT (Pas)"
         else:
-            return "🔴 Overbudget"
+            return "🔴 OVERLIMIT"
             
     merged['Status_Otomatis'] = merged.apply(hitung_status_otomatis, axis=1)
 
@@ -305,20 +340,20 @@ with tab1:
     col1, col2 = st.columns([1.25, 0.75])
 
     with col1:
-        st.subheader("📊 Perbandingan Anggaran dan Realisasi Per Kantong")
+        st.subheader("📊 Budget vs Realisasi Per Pos 🎯")
         if not merged.empty:
             fig = px.bar(
                 merged, 
                 x='kategori', 
                 y=['Anggaran', 'Realisasi'], 
-                color_discrete_sequence=['#CBD5E1', '#2563EB'],
+                color_discrete_sequence=['#334155', '#0284C7'],
                 barmode='group',
                 hover_data={
                     'jenis_pengeluaran': True,
                     'Sisa_Anggaran': True,
                     'Status_Otomatis': True
                 },
-                labels={'kategori': 'Nama Kantong', 'value': 'Nominal (Rp)', 'variable': 'Kategori'}
+                labels={'kategori': 'Nama Pos', 'value': 'Nominal (Rp)', 'variable': 'Kategori'}
             )
             fig.update_layout(
                 xaxis_title="",
@@ -333,7 +368,7 @@ with tab1:
             st.plotly_chart(fig, use_container_width=True)
             
             # Tabel Rincian Sisa Alokasi dan Status Per Kantong
-            st.markdown("##### 📌 Rincian Sisa Alokasi Anggaran & Status Otomatis")
+            st.markdown("##### 📌 Rincian Sisa Limit & Status ⚡")
             df_tabel_sisa = merged.copy()
             df_tabel_sisa['Anggaran_Fmt'] = df_tabel_sisa['Anggaran'].apply(format_rupiah)
             df_tabel_sisa['Realisasi_Fmt'] = df_tabel_sisa['Realisasi'].apply(format_rupiah)
@@ -343,24 +378,24 @@ with tab1:
                 df_tabel_sisa[['kategori', 'Anggaran_Fmt', 'Realisasi_Fmt', 'Sisa_Fmt', 'Status_Otomatis']],
                 use_container_width=True,
                 column_config={
-                    "kategori": st.column_config.TextColumn("Nama Kantong"),
-                    "Anggaran_Fmt": st.column_config.TextColumn("Anggaran"),
-                    "Realisasi_Fmt": st.column_config.TextColumn("Terpakai"),
-                    "Sisa_Fmt": st.column_config.TextColumn("Sisa Alokasi"),
-                    "Status_Otomatis": st.column_config.TextColumn("Status")
+                    "kategori": st.column_config.TextColumn("Nama Pos 🎯"),
+                    "Anggaran_Fmt": st.column_config.TextColumn("Budget Limit 💰"),
+                    "Realisasi_Fmt": st.column_config.TextColumn("Terpakai 💸"),
+                    "Sisa_Fmt": st.column_config.TextColumn("Sisa Limit ⚡"),
+                    "Status_Otomatis": st.column_config.TextColumn("Status 🚨")
                 },
                 hide_index=True
             )
         else:
-            st.info("💡 Belum terdapat data anggaran pada bulan berjalan.")
+            st.info("💡 Belum ada data transaksi pengeluaran bulan ini bro! 👊")
 
     with col2:
-        st.subheader("🤖 Penasihat Keuangan AI")
-        st.caption("Analisis otomatis posisi keuangan berdasarkan data kantong Anda.")
+        st.subheader("🤖 AI Financial Advisor 🧠")
+        st.caption("Analisis taktis otomatis berbasis data posisi keuangan lo.")
         
-        if st.button("🔍 Dapatkan Analisis Keuangan", use_container_width=True, type="primary"):
+        if st.button("🔍 Minta Analisis Taktis AI ⚡", use_container_width=True, type="primary"):
             if not GEMINI_KEY:
-                st.error("🔑 Harap atur GEMINI_API_KEY pada Streamlit Secrets.")
+                st.error("🔑 GEMINI_API_KEY belum terpasang di Secrets Bro!")
             else:
                 try:
                     client = genai.Client(api_key=GEMINI_KEY)
@@ -375,10 +410,10 @@ with tab1:
                     Data Per Kantong Keuangan, Sisa Alokasi & Status Otomatisnya:
                     {data_text}
 
-                    Berikan evaluasi baku, profesional, dan obyektif mengenai kondisi pemasukan vs pengeluaran serta rekomendasi pengendalian anggaran.
+                    Berikan evaluasi yang to the point, lugas, tegas, maskulin, dan obyektif mengenai kondisi keuangan bro ini. Berikan strategi hemat yang taktis.
                     """
                     
-                    with st.spinner("Sistem AI sedang menganalisis data keuangan Anda..."):
+                    with st.spinner("AI sedang mengalkulasi strategi keuangan lo bro... ⚡"):
                         response = client.models.generate_content(
                             model='gemini-2.0-flash',
                             contents=prompt,
@@ -388,7 +423,7 @@ with tab1:
                             st.markdown(response.text)
                 except APIError as e:
                     if e.code == 429 or "RESOURCE_EXHAUSTED" in str(e):
-                        st.warning("⏳ Batas penggunaan API gratis telah tercapai. Harap tunggu 30 detik sebelum mencoba kembali.")
+                        st.warning("⏳ API Limit bro, tunggu 30 detik lagi ya! ⚠️")
                     else:
                         st.error(f"Kesalahan API: {e.message}")
                 except Exception as e:
@@ -396,12 +431,12 @@ with tab1:
 
 # TAB 2: REVISI TRANSAKSI
 with tab2:
-    st.subheader("✏️ Pembaruan dan Revisi Transaksi")
-    st.caption("Fasilitas koreksi data transaksi keuangan (Pemasukan maupun Pengeluaran).")
+    st.subheader("✏️ Edit & Adjust Transaksi 🛠️")
+    st.caption("Koreksi data input transaksi kalau ada yang keliru Bro.")
     
     if not df.empty:
         df['label_pilihan'] = df['tanggal'] + " | " + df['kategori'] + " | " + df['nominal'].apply(format_rupiah) + " (" + df['keterangan'].fillna('') + ")"
-        pilihan_transaksi = st.selectbox("📌 Pilih Transaksi yang Ingin Diperbarui:", df['label_pilihan'].tolist())
+        pilihan_transaksi = st.selectbox("📌 Pilih Transaksi yang Mau Di-edit:", df['label_pilihan'].tolist())
         
         selected_row = df[df['label_pilihan'] == pilihan_transaksi].iloc[0]
         
@@ -409,35 +444,35 @@ with tab2:
         col_edit1, col_edit2 = st.columns(2)
         
         with col_edit1:
-            e_tgl = st.date_input("Tanggal Transaksi", datetime.strptime(selected_row['tanggal'], "%Y-%m-%d"))
-            e_jenis = st.selectbox("Pos Transaksi Utama", list(STRUKTUR_TRANSAKSI.keys()), index=list(STRUKTUR_TRANSAKSI.keys()).index(selected_row['jenis_pengeluaran']) if selected_row['jenis_pengeluaran'] in STRUKTUR_TRANSAKSI else 0)
+            e_tgl = st.date_input("Tanggal Transaksi 📅", datetime.strptime(selected_row['tanggal'], "%Y-%m-%d"))
+            e_jenis = st.selectbox("Pos Transaksi Utama 📑", list(STRUKTUR_TRANSAKSI.keys()), index=list(STRUKTUR_TRANSAKSI.keys()).index(selected_row['jenis_pengeluaran']) if selected_row['jenis_pengeluaran'] in STRUKTUR_TRANSAKSI else 0)
             e_kat_options = list(STRUKTUR_TRANSAKSI[e_jenis].keys())
-            e_kat = st.selectbox("Nama Kantong / Kategori", e_kat_options, index=e_kat_options.index(selected_row['kategori']) if selected_row['kategori'] in e_kat_options else 0)
+            e_kat = st.selectbox("Nama Kantong / Kategori 🎯", e_kat_options, index=e_kat_options.index(selected_row['kategori']) if selected_row['kategori'] in e_kat_options else 0)
         
         with col_edit2:
-            e_nom = st.number_input("Nominal Transaksi (Rp)", value=int(selected_row['nominal']), step=10000)
-            st.info(f"Format Resmi: **{format_rupiah(e_nom)}**")
+            e_nom = st.number_input("Nominal Transaksi (Rp) 💵", value=int(selected_row['nominal']), step=10000)
+            st.info(f"Format Nominal: **{format_rupiah(e_nom)}** 🔥")
             
-            e_ket = st.text_input("Keterangan", value=str(selected_row['keterangan']) if pd.notna(selected_row['keterangan']) else "")
+            e_ket = st.text_input("Keterangan 📝", value=str(selected_row['keterangan']) if pd.notna(selected_row['keterangan']) else "")
             
             st.markdown("<br>", unsafe_allow_html=True)
             col_btn1, col_btn2 = st.columns(2)
             
             with col_btn1:
-                if st.button("💾 Simpan Perubahan", use_container_width=True, type="primary"):
+                if st.button("💾 Update Transaksi", use_container_width=True, type="primary"):
                     update_transaksi(selected_row['doc_id'], e_tgl, e_jenis, e_kat, e_nom, e_ket)
-                    st.success("Perubahan data transaksi berhasil disimpan!")
+                    st.success("Sip! Data transaksi sukses diperbarui Bro! 🔥")
                     st.rerun()
             
             with col_btn2:
                 if st.button("🗑️ Hapus Transaksi", use_container_width=True):
                     hapus_transaksi(selected_row['doc_id'])
-                    st.warning("Data transaksi berhasil dihapus.")
+                    st.warning("Data transaksi berhasil dihapus Bro! 🗑️")
                     st.rerun()
 
 # --- 8. JURNAL TRANSAKSI HARIAN (PENGELOMPOKAN FILTER DROPDOWN) ---
 st.markdown("---")
-st.subheader("📑 Jurnal Transaksi Harian (Firestore Cloud)")
+st.subheader("📑 Database Jurnal Transaksi (Firestore Cloud) 📊⚡")
 
 if not df.empty:
     df_display = df.copy()
@@ -455,7 +490,7 @@ if not df.empty:
 
     # Informasi Ringkasan Kelompok
     total_nominal_kelompok = df_filtered['nominal'].sum() if not df_filtered.empty else 0
-    st.caption(f"Menampilkan **{len(df_filtered)}** transaksi | Total Akumulasi: **{format_rupiah(total_nominal_kelompok)}**")
+    st.caption(f"Menampilkan **{len(df_filtered)}** transaksi | Total Akumulasi: **{format_rupiah(total_nominal_kelompok)}** 🔥")
     
     cols_order = [c for c in ['tanggal', 'jenis_pengeluaran', 'kategori', 'nominal_fmt', 'keterangan'] if c in df_filtered.columns]
     df_show = df_filtered[cols_order].sort_values(by='tanggal', ascending=False)
@@ -464,13 +499,13 @@ if not df.empty:
         df_show, 
         use_container_width=True,
         column_config={
-            "tanggal": st.column_config.TextColumn("Tanggal"),
-            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama"),
-            "kategori": st.column_config.TextColumn("Nama Kantong / Kategori"),
-            "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi"),
-            "keterangan": st.column_config.TextColumn("Keterangan")
+            "tanggal": st.column_config.TextColumn("Tanggal 📅"),
+            "jenis_pengeluaran": st.column_config.TextColumn("Pos Transaksi Utama 📑"),
+            "kategori": st.column_config.TextColumn("Nama Pos 🎯"),
+            "nominal_fmt": st.column_config.TextColumn("Nominal Transaksi 💵"),
+            "keterangan": st.column_config.TextColumn("Keterangan 📝")
         },
         hide_index=True
     )
 else:
-    st.caption("Belum terdapat riwayat transaksi yang tersimpan.")
+    st.caption("Belum ada riwayat transaksi tersimpan bro!")
