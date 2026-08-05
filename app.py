@@ -30,29 +30,26 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# --- 3. CONFIG PEMASUKAN & STRUKTUR PENGELUARAN ---
+# --- 3. CONFIG PEMASUKAN & STRUKTUR 3 POS PENGELUARAN ---
 PEMASUKAN_BULANAN = 8183550  # Gaji (2.938.400) + Tukin (4.595.150) + Uang Makan (650.000)
 TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
-# Pengelompokan Berdasarkan 4 Jenis Pengeluaran
+# Struktur Pengelompokan 3 Pos Pengeluaran
 STRUKTUR_PENGELUARAN = {
-    "Tabungan & Investasi": {
+    "1. Pengeluaran Tetap & Masa Depan": {
         "Tabungan Nikah": 2700000,
-        "Dana Darurat": 200000,
-        "Investasi / Reksadana": 100000
-    },
-    "Pengeluaran Tetap": {
         "Orang Tua (Cilacap)": 1000000,
-        "Kebutuhan Pokok": 2000000
+        "Dana Darurat / Investasi": 300000
     },
-    "Pengeluaran Variabel": {
+    "2. Pengeluaran Berkala": {
+        "Dana Tak Terduga": 383550
+    },
+    "3. Pengeluaran Dinamis / Variabel": {
+        "Kebutuhan Pokok": 2000000,
         "Pacaran": 1100000,
         "Olahraga / Minsoc": 300000,
         "Keinginan Sendiri": 400000
-    },
-    "Pengeluaran Berkala": {
-        "Dana Tak Terduga": 383550
     }
 }
 
@@ -80,34 +77,36 @@ def ambil_semua_transaksi():
     if data:
         df_temp = pd.DataFrame(data)
         if 'jenis_pengeluaran' not in df_temp.columns and 'kategori' in df_temp.columns:
-            df_temp['jenis_pengeluaran'] = df_temp['kategori'].map(KATEGORI_KE_JENIS).fillna("Pengeluaran Variabel")
+            df_temp['jenis_pengeluaran'] = df_temp['kategori'].map(KATEGORI_KE_JENIS).fillna("3. Pengeluaran Dinamis / Variabel")
         return df_temp
     return pd.DataFrame()
 
-# --- 5. SIDEBAR: FORM INPUT ---
+# --- 5. SIDEBAR: INPUT DINAMIS ---
 st.sidebar.markdown("## 📊 **UANGABIL TRACKER**")
 st.sidebar.caption("Financial Command Center")
 st.sidebar.markdown("---")
 
 st.sidebar.subheader("➕ Tambah Transaksi Harian")
-with st.sidebar.form(key='form_transaksi', clear_on_submit=True):
-    tgl = st.date_input("Tanggal Transaksi", datetime.now())
-    
-    # Selection 1: Jenis Pengeluaran
-    jenis_selected = st.selectbox("Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
-    
-    # Selection 2: Kategori Dinamis berdasarkan Jenis Pengeluaran
-    kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
-    kategori_selected = st.selectbox("Kategori", kategori_options)
-    
-    nominal = st.number_input("Nominal (Rp)", min_value=0, step=10000)
-    ket = st.text_input("Keterangan", placeholder="Contoh: Bensin, Main Minsoc, Topup Bibit")
-    submit = st.form_submit_button("Simpan ke Cloud Firebase")
 
-    if submit and nominal > 0:
+tgl = st.sidebar.date_input("Tanggal Transaksi", datetime.now())
+
+# Selection 1: Jenis Pos Pengeluaran (Luar Form agar Reaktif Dinamis)
+jenis_selected = st.sidebar.selectbox("Jenis Pengeluaran", list(STRUKTUR_PENGELUARAN.keys()))
+
+# Selection 2: Kategori otomatis berubah sesuai Pos yang dipilih
+kategori_options = list(STRUKTUR_PENGELUARAN[jenis_selected].keys())
+kategori_selected = st.sidebar.selectbox("Kategori", kategori_options)
+
+nominal = st.sidebar.number_input("Nominal (Rp)", min_value=0, step=10000)
+ket = st.sidebar.text_input("Keterangan", placeholder="Contoh: Bensin, Main Minsoc, Topup Bibit")
+
+if st.sidebar.button("Simpan ke Cloud Firebase", type="primary"):
+    if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
         st.sidebar.success("Berhasil tersimpan di Firebase!")
         st.rerun()
+    else:
+        st.sidebar.warning("Nominal harus lebih dari 0!")
 
 # --- 6. DASHBOARD UTAMA ---
 st.markdown('<p class="main-title">📈 UANGABIL TRACKER</p>', unsafe_allow_html=True)
@@ -196,7 +195,7 @@ with col1:
 
 with col2:
     st.subheader("🤖 UANGABIL AI Advisor")
-    st.write("Analisis otomatis berdasarkan penggolongan jenis pengeluaran Anda.")
+    st.write("Analisis otomatis berdasarkan 3 pos pengeluaran utama Anda.")
     
     if st.button("🔍 Analisis Keuangan Saya via AI"):
         if not GEMINI_KEY:
@@ -215,20 +214,19 @@ with col2:
                 - Total Pengeluaran: Rp {total_pengeluaran_bln:,.0f}
                 - Sisa Saldo: Rp {sisa_uang:,.0f}
 
-                Data Alokasi per Jenis Pengeluaran:
+                Data Alokasi 3 Pos Pengeluaran:
                 {data_text}
 
-                Profil Pengeluaran:
+                Profil Keuangan:
                 - Rutin kirim ke Orang Tua Cilacap (Rp 1.000.000).
                 - Target Dana Nikah 2028: Rp 100.000.000.
 
-                Lakukan evaluasi terstruktur berdasarkan 4 jenis pengeluaran:
-                1. Tabungan & Investasi
-                2. Pengeluaran Tetap
-                3. Pengeluaran Variabel (Evaluasi potensi kebocoran di pos Pacaran, Olahraga/Minsoc, dan Keinginan Sendiri)
-                4. Pengeluaran Berkala / Tak Terduga
+                Lakukan evaluasi terstruktur berdasarkan 3 Jenis Pos Pengeluaran:
+                1. Pengeluaran Tetap & Masa Depan (Pastikan Tabungan Nikah & Orang Tua Cilacap tidak terganggu).
+                2. Pengeluaran Berkala (Cek kesiapan Dana Tak Terduga).
+                3. Pengeluaran Dinamis / Variabel (Evaluasi potensi kebocoran di pos Kebutuhan Pokok, Pacaran, Olahraga/Minsoc, dan Keinginan Sendiri).
 
-                Berikan rekomendasi praktis agar pos Pengeluaran Variabel tetap terkendali dan target 2028 tercapai aman.
+                Berikan rekomendasi praktis tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
                 """
                 with st.spinner("UANGABIL AI sedang menganalisis data..."):
                     res = model.generate_content(prompt)
