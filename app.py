@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import google.generativeai as genai
+from google import genai
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime
@@ -204,25 +204,8 @@ with col2:
             st.warning("Belum ada data transaksi bulan ini.")
         else:
             try:
-                genai.configure(api_key=GEMINI_KEY)
-                
-                # Deteksi otomatis model yang tersedia dari Google API
-                available_models = [
-                    m.name for m in genai.list_models() 
-                    if 'generateContent' in m.supported_generation_methods
-                ]
-                
-                # Prioritaskan model flash
-                selected_model = None
-                for m in available_models:
-                    if 'flash' in m:
-                        selected_model = m
-                        break
-                if not selected_model and available_models:
-                    selected_model = available_models[0]
-                
-                if not selected_model:
-                    selected_model = 'gemini-1.5-flash'
+                # Inisialisasi Google GenAI Client SDK Resmi
+                client = genai.Client(api_key=GEMINI_KEY)
 
                 data_text = merged[['jenis_pengeluaran', 'kategori', 'Budget', 'Realisasi']].to_string(index=False)
                 
@@ -247,12 +230,14 @@ with col2:
                 Berikan rekomendasi praktis tentang area mana pada Pengeluaran Dinamis yang perlu di-"diet" jika terjadi pembengkakan anggaran.
                 """
                 
-                with st.spinner(f"UANGABIL AI sedang menganalisis ({selected_model})..."):
-                    model = genai.GenerativeModel(selected_model)
-                    res = model.generate_content(prompt)
-                    if res and res.text:
+                with st.spinner("UANGABIL AI sedang menganalisis..."):
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt,
+                    )
+                    if response and response.text:
                         st.markdown("---")
-                        st.markdown(res.text)
+                        st.markdown(response.text)
                     else:
                         st.error("Gagal mendapatkan respon dari AI.")
                         
