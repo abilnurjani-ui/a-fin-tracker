@@ -145,7 +145,7 @@ if st.sidebar.button("🚀 Masukkan ke Kantong", use_container_width=True, type=
         st.sidebar.warning("Nominal harus lebih dari 0!")
 
 st.sidebar.markdown("---")
-st.sidebar.info("📍 **BMKG Samarinda**\n🎯 Target Akad Nikah: **2028**")
+st.sidebar.info("📍 **Samarinda**\n🎯 Target Akad Nikah: **2028**")
 
 # --- 6. DASHBOARD UTAMA ---
 st.markdown('<p class="main-title">👋 Selamat Datang di UANGABIL TRACKER!</p>', unsafe_allow_html=True)
