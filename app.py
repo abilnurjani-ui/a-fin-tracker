@@ -44,7 +44,6 @@ if "Maskulin" in tema_pilihan:
     text_btn_ai = "🧠 MINTA STRATEGI TAKTIS AI ⚡"
     text_btn_update = "💾 UPDATE DATA 👊"
     text_btn_hapus = "DESTROY TRANSAKSI 💣"
-    msg_simpan = "GOKIL BRO! CASHFLOW SUKSES DI-PUSH! 🏁🔥"
     msg_sidebar_footer = "⚡ **NO MERCY UNTUK BOROS! KUASAI FINANCIAL FREEDOM!** 🏁"
     
     lbl_tgl = "TANGGAL TRANSAKSI 📅"
@@ -77,7 +76,6 @@ else:
     text_btn_ai = "🔍 Minta Analisis Keuangan AI ✨"
     text_btn_update = "💾 Simpan Perubahan 🌸"
     text_btn_hapus = "🗑️ Hapus Transaksi 🥺"
-    msg_simpan = "Yay! Berhasil simpan transaksi! 🎉"
     msg_sidebar_footer = "✨ **CATAT SEMUA PENGELUARANMU SECARA REAL TIME YAA!!** 🌸"
     
     lbl_tgl = "Tanggal Transaksi 📅"
@@ -189,7 +187,13 @@ def ambil_semua_transaksi():
         return df_temp
     return pd.DataFrame()
 
-# --- 6. BILAH SISI (SIDEBAR): INPUT TRANSAKSI ---
+# --- 6. CHECK & TAMPILKAN NOTIFIKASI POP-UP ---
+if "notif_sukses" in st.session_state:
+    st.toast(st.session_state["notif_sukses"], icon="✅")
+    st.success(st.session_state["notif_sukses"])
+    del st.session_state["notif_sukses"]
+
+# --- 7. BILAH SISI (SIDEBAR): INPUT TRANSAKSI ---
 st.sidebar.subheader("➕ Catat Transaksi Baru ✏️")
 
 tgl = st.sidebar.date_input(lbl_tgl, datetime.now())
@@ -212,7 +216,7 @@ ket = st.sidebar.text_input(lbl_ket, placeholder="Contoh: Gaji, bonus, belanja, 
 if st.sidebar.button(text_btn_simpan, use_container_width=True, type="primary"):
     if nominal > 0:
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
-        st.sidebar.success(msg_simpan)
+        st.session_state["notif_sukses"] = f"Berhasil! Transaksi {format_rupiah(nominal)} pada {kategori_selected} telah dicatat ke cloud database! 🚀"
         st.rerun()
     else:
         st.sidebar.warning("Nominal transaksi kudu lebih dari Rp0! ⚠️")
@@ -220,7 +224,7 @@ if st.sidebar.button(text_btn_simpan, use_container_width=True, type="primary"):
 st.sidebar.markdown("---")
 st.sidebar.info(msg_sidebar_footer)
 
-# --- 7. DASHBOARD UTAMA & PERHITUNGAN NERACA SALDO ---
+# --- 8. DASHBOARD UTAMA & PERHITUNGAN NERACA SALDO ---
 st.markdown(f'<p class="main-title">{title_app}</p>', unsafe_allow_html=True)
 st.markdown(f'<p class="sub-title">{sub_title}</p>', unsafe_allow_html=True)
 
@@ -237,7 +241,6 @@ if not df.empty and 'tanggal' in df.columns:
     df_bln = df[(df['tanggal_dt'].dt.month == bln_ini) & (df['tanggal_dt'].dt.year == thn_ini)]
     
     if not df_bln.empty:
-        # Pemisahan Murni: Pemasukan vs Pengeluaran
         df_pemasukan = df_bln[df_bln['jenis_pengeluaran'] == '0. Pemasukan Kas / Gaji']
         df_pengeluaran = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
         
@@ -324,7 +327,6 @@ tab1, tab2 = st.tabs(["📊 ANALYTICS & AI ADVISOR 🧠", "✏️ EDIT & ADJUST 
 
 merged = pd.DataFrame()
 if not df_bln.empty:
-    # Memfilter hanya grup pengeluaran untuk grafik perbandingan alokasi
     df_pengeluaran_bln = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
     summary = df_pengeluaran_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index() if not df_pengeluaran_bln.empty else pd.DataFrame(columns=['jenis_pengeluaran', 'kategori', 'nominal'])
     
@@ -473,16 +475,16 @@ with tab2:
             with col_btn1:
                 if st.button(text_btn_update, use_container_width=True, type="primary"):
                     update_transaksi(selected_row['doc_id'], e_tgl, e_jenis, e_kat, e_nom, e_ket)
-                    st.success("DATA TRANSAKSI BERHASIL DIPERBARUI! 🔥")
+                    st.session_state["notif_sukses"] = f"Perubahan data transaksi {selected_row['kategori']} berhasil diperbarui! 🔥"
                     st.rerun()
             
             with col_btn2:
                 if st.button(text_btn_hapus, use_container_width=True):
                     hapus_transaksi(selected_row['doc_id'])
-                    st.warning("DATA TRANSAKSI BERHASIL DIHAPUS BRO! 🗑️")
+                    st.session_state["notif_sukses"] = "Data transaksi berhasil dihapus dari cloud database! 🗑️"
                     st.rerun()
 
-# --- 8. JURNAL TRANSAKSI HARIAN ---
+# --- 9. JURNAL TRANSAKSI HARIAN ---
 st.markdown("---")
 st.subheader("📑 DATABASE JURNAL TRANSAKSI (FIRESTORE CLOUD) 📊⚡")
 
