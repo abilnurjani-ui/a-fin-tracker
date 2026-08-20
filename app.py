@@ -87,40 +87,26 @@ else:
     status_pas = "🟡 Pas 🎯"
     status_over = "🔴 Overbudget 🥺"
 
-# --- CSS RESPONSIVE DESKTOP & MOBILE (HP) ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: {bg_main}; }}
-    
-    /* Styling Desktop */
     .main-title {{ font-size: 2.3rem; font-weight: 900; color: {color_title}; margin-bottom: 2px; }}
     .sub-title {{ font-size: 1rem; color: {color_sub}; margin-bottom: 22px; font-weight: 700; }}
-    .metric-card {{ background: {bg_card}; padding: 18px 22px; border-radius: 16px; border: {border_card}; margin-bottom: 10px; }}
+    .metric-card {{ background: {bg_card}; padding: 18px 22px; border-radius: 14px; border: {border_card}; margin-bottom: 10px; }}
     .metric-label {{ font-size: 0.85rem; font-weight: 900; color: {color_label}; margin-bottom: 6px; }}
-    .metric-val {{ font-size: 1.55rem; font-weight: 900; color: {color_val}; word-break: break-word; }}
-    .target-card {{ background: {gradient_target}; padding: 22px 26px; border-radius: 18px; border: {border_target}; margin-bottom: 18px; }}
+    .metric-val {{ font-size: 1.6rem; font-weight: 900; color: {color_val}; word-break: break-word; }}
+    .target-card {{ background: {gradient_target}; padding: 22px 26px; border-radius: 16px; border: {border_target}; margin-bottom: 18px; }}
     .target-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }}
-    
-    .stButton>button {{ border-radius: 12px !important; font-weight: 900 !important; padding: 10px 20px !important; }}
+    .stButton>button {{ border-radius: 10px !important; font-weight: 900 !important; padding: 10px 20px !important; }}
 
-    /* --- RESPONSIVE UNTUK HP / SMARTPHONE (Max-Width 768px) --- */
     @media (max-width: 768px) {{
         .main-title {{ font-size: 1.6rem !important; text-align: center; }}
         .sub-title {{ font-size: 0.85rem !important; text-align: center; margin-bottom: 16px; }}
-        
-        /* Padding & Font Kartu Metrik HP */
         .metric-card {{ padding: 14px 16px !important; border-radius: 14px !important; }}
         .metric-label {{ font-size: 0.75rem !important; }}
         .metric-val {{ font-size: 1.25rem !important; }}
-        
-        /* Layout Target Card di HP */
         .target-card {{ padding: 16px 18px !important; }}
         .target-header {{ flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }}
-        .target-title {{ font-size: 0.95rem !important; }}
-        .target-val {{ font-size: 1.3rem !important; }}
-        
-        /* Optimasi Form Input & Tombol HP */
-        .stButton>button {{ font-size: 0.85rem !important; padding: 8px 12px !important; }}
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -271,10 +257,13 @@ if not df.empty and 'tanggal' in df.columns:
     df_bln = df[(df['tanggal_dt'].dt.month == bln_ini) & (df['tanggal_dt'].dt.year == thn_ini)]
     
     if not df_bln.empty:
+        # PERHITUNGAN AKURAT PEMASUKAN VS PENGELUARAN
         df_pemasukan = df_bln[df_bln['jenis_pengeluaran'] == '0. Pemasukan Kas / Gaji']
         df_pengeluaran = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
         
-        total_pemasukan_bln = df_pemasukan['nominal'].sum() if not df_pemasukan.empty else PEMASUKAN_DEFAULT
+        pemasukan_terinput = df_pemasukan['nominal'].sum() if not df_pemasukan.empty else 0
+        total_pemasukan_bln = PEMASUKAN_DEFAULT + pemasukan_terinput
+        
         total_pengeluaran_bln = df_pengeluaran['nominal'].sum() if not df_pengeluaran.empty else 0
     else:
         total_pemasukan_bln = PEMASUKAN_DEFAULT
@@ -283,7 +272,7 @@ else:
 
 sisa_uang = total_pemasukan_bln - total_pengeluaran_bln
 
-# Kartu Ringkasan Neraca Kas (Responsif di PC & HP)
+# Kartu Ringkasan Neraca Kas
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
@@ -318,6 +307,13 @@ with col_m4:
             <div class="metric-val" style="color:#34D399;">SURPLUS 🏁</div>
         </div>
         """, unsafe_allow_html=True)
+    elif sisa_uang == 0:
+        st.markdown("""
+        <div class="metric-card" style="background:#1E293B; border-color:#475569;">
+            <div class="metric-label" style="color:#94A3B8;">STATUS CASHFLOW ⚖️</div>
+            <div class="metric-val" style="color:#F8FAFC;">PAS (BALANCE)</div>
+        </div>
+        """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div class="metric-card" style="background:#4C0519; border-color:#9F1239;">
@@ -328,7 +324,7 @@ with col_m4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Target Tabungan Pernikahan Responsif
+# Target Tabungan Pernikahan
 total_nikah = 0
 if not df.empty and 'kategori' in df.columns:
     total_nikah = df[df['kategori'].isin(['Kantong Tabungan Nikah', 'Tabungan Nikah'])]['nominal'].sum()
