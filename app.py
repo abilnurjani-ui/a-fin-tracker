@@ -9,22 +9,21 @@ from datetime import datetime
 
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(
-    page_title="UANGABIL TRACKER 🏁", 
+    page_title="UANGABIL TRACKER 💳✨", 
     layout="wide", 
-    page_icon="⚡"
+    page_icon="💳"
 )
 
 # --- 2. FITUR SWITCH TEMA (MASKULIN GAHAR VS UNYU IMUT) ---
-st.sidebar.markdown("### ⚙️ **WAR ROOM THEME SWITCH** ⚡")
+st.sidebar.markdown("### 🎨 **PILIH TEMA TAMPILAN** 🎭")
 tema_pilihan = st.sidebar.radio(
-    "Pilih Mode Tampilan:",
+    "Gaya Tampilan Aplikasi:",
     ["🔥 Maskulin Gahar (Cyberpunk Dark)", "🎀 Unyu Imut (Soft Pastel)"]
 )
 st.sidebar.markdown("---")
 
 # Mengatur Variabel Styling & Emoji berdasarkan Pilihan Tema
 if "Maskulin" in tema_pilihan:
-    # --- TEMA MASKULIN GAHAR (CYBERPUNK / STREETWEAR DARK) ---
     bg_main = "#09090B"
     bg_card = "#121215"
     border_card = "2px solid #27272A"
@@ -36,10 +35,9 @@ if "Maskulin" in tema_pilihan:
     border_target = "2px solid #00F2FE"
     color_bar = ['#27272A', '#00F2FE']
     
-    # Emoji & Teks Gahar
     title_app = "UANGABIL TRACKER 🏎️⚡"
     sub_title = "FINANCIAL COMMAND CENTER | TARGET MISSION: NIKAH 2028 💍🔥"
-    label_inflow = "TOTAL INFLOW (CUAN) 💵"
+    label_inflow = "TOTAL INFLOW (CUAN) 💰"
     label_burn = "BURN RATE (PENGELUARAN) 💸"
     label_sisa = "NET LIQUIDITY (SALDO) 💳"
     text_btn_simpan = "🚀 EXECUTE TRANSAKSI 🔥"
@@ -49,7 +47,6 @@ if "Maskulin" in tema_pilihan:
     msg_simpan = "GOKIL BRO! CASHFLOW SUKSES DI-PUSH! 🏁🔥"
     msg_sidebar_footer = "⚡ **NO MERCY UNTUK BOROS! KUASAI FINANCIAL FREEDOM!** 🏁"
     
-    # Label Kolom Tabel & Input
     lbl_tgl = "TANGGAL TRANSAKSI 📅"
     lbl_pos = "POS TRANSAKSI UTAMA 📑"
     lbl_kantong = "NAMA POS / KANTONG 🎯"
@@ -60,7 +57,6 @@ if "Maskulin" in tema_pilihan:
     status_over = "🔴 DANGER OVERBUDGET 🚨"
 
 else:
-    # --- TEMA UNYU IMUT (PASTEL SOFT) ---
     bg_main = "#FFFFFF"
     bg_card = "#FFF1F2"
     border_card = "2px solid #FFE4E6"
@@ -72,7 +68,6 @@ else:
     border_target = "2px dashed #FDA4AF"
     color_bar = ['#FBCFE8', '#F43F5E']
     
-    # Emoji & Teks Imut
     title_app = "UANGABIL TRACKER 🧸✨"
     sub_title = "Pemantauan Arus Kas Harian & Tabungan Pernikahan Tahun 2028 💒🌸"
     label_inflow = "Pemasukan Bulan Ini 🌸"
@@ -85,7 +80,6 @@ else:
     msg_simpan = "Yay! Berhasil simpan transaksi! 🎉"
     msg_sidebar_footer = "✨ **CATAT SEMUA PENGELUARANMU SECARA REAL TIME YAA!!** 🌸"
     
-    # Label Kolom Tabel & Input
     lbl_tgl = "Tanggal Transaksi 📅"
     lbl_pos = "Pos Transaksi Utama 📑"
     lbl_kantong = "Nama Kantong / Kategori 👛"
@@ -95,63 +89,16 @@ else:
     status_pas = "🟡 Pas 🎯"
     status_over = "🔴 Overbudget 🥺"
 
-# Suntikkan CSS Dinamis Sesuai Tema
 st.markdown(f"""
     <style>
-    /* Styling Latar Belakang & Tipografi Utama */
-    .stApp {{
-        background-color: {bg_main};
-    }}
-    .main-title {{ 
-        font-size: 2.3rem; 
-        font-weight: 900; 
-        color: {color_title}; 
-        margin-bottom: 2px;
-        letter-spacing: -0.5px;
-        text-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
-    }}
-    .sub-title {{ 
-        font-size: 1rem; 
-        color: {color_sub}; 
-        margin-bottom: 22px; 
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }}
-    .metric-card {{
-        background: {bg_card};
-        padding: 18px 22px;
-        border-radius: 14px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        border: {border_card};
-    }}
-    .metric-label {{ 
-        font-size: 0.85rem; 
-        font-weight: 900; 
-        color: {color_label}; 
-        margin-bottom: 6px; 
-        letter-spacing: 0.8px;
-    }}
-    .metric-val {{ 
-        font-size: 1.6rem; 
-        font-weight: 900; 
-        color: {color_val}; 
-    }}
-    .target-card {{
-        background: {gradient_target};
-        padding: 22px 26px;
-        border-radius: 16px;
-        border: {border_target};
-        margin-bottom: 18px;
-        box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
-    }}
-    .stButton>button {{
-        border-radius: 10px !important;
-        font-weight: 900 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        padding: 10px 20px !important;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.4) !important;
-    }}
+    .stApp {{ background-color: {bg_main}; }}
+    .main-title {{ font-size: 2.3rem; font-weight: 900; color: {color_title}; margin-bottom: 2px; }}
+    .sub-title {{ font-size: 1rem; color: {color_sub}; margin-bottom: 22px; font-weight: 700; }}
+    .metric-card {{ background: {bg_card}; padding: 18px 22px; border-radius: 14px; border: {border_card}; }}
+    .metric-label {{ font-size: 0.85rem; font-weight: 900; color: {color_label}; margin-bottom: 6px; }}
+    .metric-val {{ font-size: 1.6rem; font-weight: 900; color: {color_val}; }}
+    .target-card {{ background: {gradient_target}; padding: 22px 26px; border-radius: 16px; border: {border_target}; margin-bottom: 18px; }}
+    .stButton>button {{ border-radius: 10px !important; font-weight: 900 !important; padding: 10px 20px !important; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -174,7 +121,8 @@ STRUKTUR_TRANSAKSI = {
         "Gaji Pokok BMKG": 2938400,
         "Tunjangan Kinerja (Tukin)": 4595150,
         "Uang Makan / Tunjangan Lain": 650000,
-        "Pemasukan Sampingan / Bonus": 0
+        "Pemasukan Sampingan / Bonus": 0,
+        "Sumber Pemasukan Lainnya": 0
     },
     "1. Pengeluaran Tetap & Masa Depan": {
         "Kantong Tabungan Nikah": 2500000,
@@ -242,7 +190,7 @@ def ambil_semua_transaksi():
     return pd.DataFrame()
 
 # --- 6. BILAH SISI (SIDEBAR): INPUT TRANSAKSI ---
-st.sidebar.subheader("➕ CATAT TRANSAKSI ✏️")
+st.sidebar.subheader("➕ Catat Transaksi Baru ✏️")
 
 tgl = st.sidebar.date_input(lbl_tgl, datetime.now())
 jenis_selected = st.sidebar.selectbox(lbl_pos, list(STRUKTUR_TRANSAKSI.keys()))
@@ -257,9 +205,9 @@ nominal = st.sidebar.number_input(
 )
 
 if nominal > 0:
-    st.sidebar.info(f"Nominal: **{format_rupiah(nominal)}** 🔥")
+    st.sidebar.info(f"Nominal: **{format_rupiah(nominal)}** ✨")
 
-ket = st.sidebar.text_input(lbl_ket, placeholder="Contoh: Bensin, boba, gym, kopi")
+ket = st.sidebar.text_input(lbl_ket, placeholder="Contoh: Gaji, bonus, belanja, kopi")
 
 if st.sidebar.button(text_btn_simpan, use_container_width=True, type="primary"):
     if nominal > 0:
@@ -267,12 +215,12 @@ if st.sidebar.button(text_btn_simpan, use_container_width=True, type="primary"):
         st.sidebar.success(msg_simpan)
         st.rerun()
     else:
-        st.sidebar.warning("Nominal transaksi kudu lebih dari Rp0 Bro! ⚠️")
+        st.sidebar.warning("Nominal transaksi kudu lebih dari Rp0! ⚠️")
 
 st.sidebar.markdown("---")
 st.sidebar.info(msg_sidebar_footer)
 
-# --- 7. DASHBOARD UTAMA ---
+# --- 7. DASHBOARD UTAMA & PERHITUNGAN NERACA SALDO ---
 st.markdown(f'<p class="main-title">{title_app}</p>', unsafe_allow_html=True)
 st.markdown(f'<p class="sub-title">{sub_title}</p>', unsafe_allow_html=True)
 
@@ -289,21 +237,20 @@ if not df.empty and 'tanggal' in df.columns:
     df_bln = df[(df['tanggal_dt'].dt.month == bln_ini) & (df['tanggal_dt'].dt.year == thn_ini)]
     
     if not df_bln.empty:
+        # Pemisahan Murni: Pemasukan vs Pengeluaran
         df_pemasukan = df_bln[df_bln['jenis_pengeluaran'] == '0. Pemasukan Kas / Gaji']
-        if not df_pemasukan.empty:
-            total_pemasukan_bln = df_pemasukan['nominal'].sum()
-        else:
-            total_pemasukan_bln = PEMASUKAN_DEFAULT
-            
         df_pengeluaran = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
-        if not df_pengeluaran.empty:
-            total_pengeluaran_bln = df_pengeluaran['nominal'].sum()
+        
+        total_pemasukan_bln = df_pemasukan['nominal'].sum() if not df_pemasukan.empty else PEMASUKAN_DEFAULT
+        total_pengeluaran_bln = df_pengeluaran['nominal'].sum() if not df_pengeluaran.empty else 0
+    else:
+        total_pemasukan_bln = PEMASUKAN_DEFAULT
 else:
     total_pemasukan_bln = PEMASUKAN_DEFAULT
 
 sisa_uang = total_pemasukan_bln - total_pengeluaran_bln
 
-# Ringkasan Kas
+# Kartu Ringkasan Neraca Kas
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
@@ -359,7 +306,7 @@ persen = progress * 100
 st.markdown(f"""
 <div class="target-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 1.15rem; font-weight: 900; color: {color_title}; letter-spacing: 0.5px;">🎯 MISSION: NIKAH 2028 💍🔥</span>
+        <span style="font-size: 1.15rem; font-weight: 900; color: {color_title};">🎯 MISSION: NIKAH 2028 💍🔥</span>
         <span style="font-size: 0.95rem; font-weight: 900; color: #0284C7; background: #F8FAFC; padding: 6px 14px; border-radius: 10px;">{persen:.1f}% UNLOCKED ⚡</span>
     </div>
     <div style="font-size: 1.65rem; font-weight: 900; color: {color_val};">
@@ -377,6 +324,7 @@ tab1, tab2 = st.tabs(["📊 ANALYTICS & AI ADVISOR 🧠", "✏️ EDIT & ADJUST 
 
 merged = pd.DataFrame()
 if not df_bln.empty:
+    # Memfilter hanya grup pengeluaran untuk grafik perbandingan alokasi
     df_pengeluaran_bln = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
     summary = df_pengeluaran_bln.groupby(['jenis_pengeluaran', 'kategori'])['nominal'].sum().reset_index() if not df_pengeluaran_bln.empty else pd.DataFrame(columns=['jenis_pengeluaran', 'kategori', 'nominal'])
     
@@ -388,7 +336,6 @@ if not df_bln.empty:
     
     merged = pd.merge(budget_df, summary, on=['jenis_pengeluaran', 'kategori'], how='left').fillna(0)
     merged.rename(columns={'nominal': 'Realisasi'}, inplace=True)
-    
     merged['Sisa_Anggaran'] = merged['Anggaran'] - merged['Realisasi']
     
     def hitung_status_otomatis(row):
@@ -406,7 +353,7 @@ with tab1:
     col1, col2 = st.columns([1.25, 0.75])
 
     with col1:
-        st.subheader("📊 BUDGET LIMIT VS REALISASI PER POS 🎨")
+        st.subheader("📊 PERBANDINGAN ANGGARAN VS REALISASI PENGELUARAN 🎨")
         if not merged.empty:
             fig = px.bar(
                 merged, 
@@ -433,7 +380,7 @@ with tab1:
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            st.markdown("##### 📌 RINCIAN SISA LIMIT & STATUS ⚡")
+            st.markdown("##### 📌 RINCIAN SISA LIMIT ANGGARAN PENGELUARAN ⚡")
             df_tabel_sisa = merged.copy()
             df_tabel_sisa['Anggaran_Fmt'] = df_tabel_sisa['Anggaran'].apply(format_rupiah)
             df_tabel_sisa['Realisasi_Fmt'] = df_tabel_sisa['Realisasi'].apply(format_rupiah)
@@ -452,7 +399,7 @@ with tab1:
                 hide_index=True
             )
         else:
-            st.info("💡 Belum ada data pengeluaran bulan ini Bro! 🏁")
+            st.info("💡 Belum terdapat data pengeluaran pada bulan berjalan.")
 
     with col2:
         st.subheader("🤖 AI FINANCIAL COMMANDER 🧠")
@@ -472,7 +419,7 @@ with tab1:
                     - Total Pengeluaran Bulan Ini: {format_rupiah(total_pengeluaran_bln)}
                     - Sisa Saldo Kas: {format_rupiah(sisa_uang)}
 
-                    Data Per Kantong Keuangan, Sisa Alokasi & Status Otomatisnya:
+                    Data Per Pos Pengeluaran, Sisa Alokasi & Status Otomatisnya:
                     {data_text}
 
                     Berikan evaluasi yang lugas, tegas, maskulin, gahar, dan obyektif mengenai kondisi finansial ini. Berikan rekomendasi hemat taktis.
@@ -497,11 +444,11 @@ with tab1:
 # TAB 2: REVISI TRANSAKSI
 with tab2:
     st.subheader("✏️ EDIT & ADJUST TRANSAKSI 🛠️")
-    st.caption("Perbaiki atau hapus transaksi yang salah Bro.")
+    st.caption("Fasilitas koreksi data transaksi keuangan (Pemasukan maupun Pengeluaran).")
     
     if not df.empty:
         df['label_pilihan'] = df['tanggal'] + " | " + df['kategori'] + " | " + df['nominal'].apply(format_rupiah) + " (" + df['keterangan'].fillna('') + ")"
-        pilihan_transaksi = st.selectbox("📌 Pilih Transaksi yang Mau Diubah:", df['label_pilihan'].tolist())
+        pilihan_transaksi = st.selectbox("📌 Pilih Transaksi yang Ingin Diperbarui:", df['label_pilihan'].tolist())
         
         selected_row = df[df['label_pilihan'] == pilihan_transaksi].iloc[0]
         
