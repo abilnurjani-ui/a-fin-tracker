@@ -14,7 +14,7 @@ st.set_page_config(
     page_icon="⚡"
 )
 
-# --- 2. SWITCH TEMA DESIGN (GEN Z CLEAN VS NEON DARK) ---
+# --- 2. SWITCH TEMA DESIGN (GEN Z CLEAN VS SOFT PASTEL) ---
 st.sidebar.markdown("### 🎨 **UI THEME SELECTOR**")
 tema_pilihan = st.sidebar.radio(
     "Pilih Mode Tampilan Dashboard:",
@@ -92,7 +92,6 @@ st.markdown(f"""
     <style>
     .stApp {{ background-color: {bg_main}; }}
     
-    /* Typography Clean & Professional */
     .main-title {{ 
         font-size: 2.2rem; 
         font-weight: 800; 
@@ -107,7 +106,6 @@ st.markdown(f"""
         font-weight: 500;
     }}
     
-    /* Card Design FinTech Style */
     .metric-card {{ 
         background: {bg_card}; 
         padding: 18px 22px; 
@@ -131,7 +129,6 @@ st.markdown(f"""
         word-break: break-word; 
     }}
     
-    /* Target Milestone Card */
     .target-card {{ 
         background: {gradient_target}; 
         padding: 20px 24px; 
@@ -146,14 +143,12 @@ st.markdown(f"""
         margin-bottom: 8px; 
     }}
     
-    /* Button Modern Curve */
     .stButton>button {{ 
         border-radius: 12px !important; 
         font-weight: 700 !important; 
         padding: 10px 18px !important; 
     }}
 
-    /* Optimasi Layar HP (Mobile) */
     @media (max-width: 768px) {{
         .main-title {{ font-size: 1.5rem !important; text-align: center; }}
         .sub-title {{ font-size: 0.8rem !important; text-align: center; margin-bottom: 16px; }}
@@ -522,13 +517,32 @@ with tab1:
                     """
                     
                     with st.spinner("AI FINANCIAL COACH IS ANALYZING YOUR DATA... 🧠⚡"):
-                        response = client.models.generate_content(
-                            model='gemini-2.0-flash',
-                            contents=prompt,
-                        )
+                        # DAFTAR ID MODEL RESMI GOOGLE GEMINI DENGAN FALLBACK
+                        available_models = [
+                            'gemini-3.7-flash', 
+                            'gemini-3.6-flash', 
+                            'gemini-3.5-flash', 
+                            'gemini-flash-latest'
+                        ]
+                        response = None
+                        
+                        for model_name in available_models:
+                            try:
+                                response = client.models.generate_content(
+                                    model=model_name,
+                                    contents=prompt,
+                                )
+                                if response and response.text:
+                                    break
+                            except Exception:
+                                continue
+                                
                         if response and response.text:
                             st.markdown("---")
                             st.markdown(response.text)
+                        else:
+                            st.error("Gagal mendapat respons dari AI Gemini API. Periksa kembali API Key kamu.")
+
                 except APIError as e:
                     if e.code == 429 or "RESOURCE_EXHAUSTED" in str(e):
                         st.warning("⏳ BATAS API GRATIS TERCAPAI. HARAP TUNGGU 30 DETIK YA! ⚠️")
