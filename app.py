@@ -120,10 +120,15 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# --- 4. KONFIGURASI ANGGARAN & KANTONG KEUANGAN ---
+# --- 4. KONFIGURASI ANGGARAN, KANTONG & MULTI-MISI ---
 PEMASUKAN_DEFAULT = 8183550  
-TARGET_NIKAH = 100000000
 GEMINI_KEY = st.secrets.get("GEMINI_API_KEY", "")
+
+# OPSI MULTI-STAGE MISI PERNIKAHAN
+PILIHAN_MISI = {
+    "🎯 Misi 1: DP Venue & Lamaran / Akad (Rp30.000.000)": 30000000,
+    "💍 Misi 2: Resepsi & Pelunasan Total (Rp100.000.000)": 100000000
+}
 
 STRUKTUR_TRANSAKSI = {
     "0. Pemasukan Kas / Gaji": {
@@ -257,13 +262,11 @@ if not df.empty and 'tanggal' in df.columns:
     df_bln = df[(df['tanggal_dt'].dt.month == bln_ini) & (df['tanggal_dt'].dt.year == thn_ini)]
     
     if not df_bln.empty:
-        # PERHITUNGAN AKURAT PEMASUKAN VS PENGELUARAN
         df_pemasukan = df_bln[df_bln['jenis_pengeluaran'] == '0. Pemasukan Kas / Gaji']
         df_pengeluaran = df_bln[df_bln['jenis_pengeluaran'] != '0. Pemasukan Kas / Gaji']
         
         pemasukan_terinput = df_pemasukan['nominal'].sum() if not df_pemasukan.empty else 0
         total_pemasukan_bln = PEMASUKAN_DEFAULT + pemasukan_terinput
-        
         total_pengeluaran_bln = df_pengeluaran['nominal'].sum() if not df_pengeluaran.empty else 0
     else:
         total_pemasukan_bln = PEMASUKAN_DEFAULT
@@ -324,27 +327,38 @@ with col_m4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Target Tabungan Pernikahan
+# --- FITUR MULTI-STAGE MISI PERNIKAHAN ---
 total_nikah = 0
 if not df.empty and 'kategori' in df.columns:
     total_nikah = df[df['kategori'].isin(['Kantong Tabungan Nikah', 'Tabungan Nikah'])]['nominal'].sum()
 
-progress = min(float(total_nikah / TARGET_NIKAH), 1.0)
+# Selection Misi Pernikahan
+misi_terpilih_nama = st.selectbox(
+    "🎯 **PILIH TAHAPAN MISI PERNIKAHAN 2028:**",
+    list(PILIHAN_MISI.keys())
+)
+target_nominal = PILIHAN_MISI[misi_terpilih_nama]
+
+progress = min(float(total_nikah / target_nominal), 1.0)
 persen = progress * 100
 
 st.markdown(f"""
 <div class="target-card">
     <div class="target-header">
-        <span class="target-title" style="font-weight: 900; color: {color_title};">🎯 MISSION: NIKAH 2028 💍🔥</span>
-        <span style="font-size: 0.9rem; font-weight: 900; color: #0284C7; background: #F8FAFC; padding: 5px 12px; border-radius: 10px;">{persen:.1f}% UNLOCKED ⚡</span>
+        <span class="target-title" style="font-weight: 900; color: {color_title};">{misi_terpilih_nama.upper()}</span>
+        <span style="font-size: 0.95rem; font-weight: 900; color: #0284C7; background: #F8FAFC; padding: 6px 14px; border-radius: 10px;">{persen:.1f}% UNLOCKED ⚡</span>
     </div>
     <div class="target-val" style="font-weight: 900; color: {color_val};">
-        {format_rupiah(total_nikah)} <span style="font-size: 0.85rem; color: {color_label}; font-weight: 700;">/ Goal {format_rupiah(TARGET_NIKAH)}</span>
+        {format_rupiah(total_nikah)} <span style="font-size: 0.85rem; color: {color_label}; font-weight: 700;">/ Goal {format_rupiah(target_nominal)}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.progress(progress)
+
+if total_nikah >= 30000000 and target_nominal == 30000000:
+    st.balloons()
+    st.success("🎉 **SELAMAT BRO! MISI 1 (DP & LAMARAN Rp30 JUTA) SUDAH LUNAS / UNLOCKED! LANJUT MISI 2!** 💍🔥")
 
 st.markdown("---")
 
@@ -446,6 +460,7 @@ with tab1:
                     - Total Pemasukan Terinput Bulan Ini: {format_rupiah(total_pemasukan_bln)}
                     - Total Pengeluaran Bulan Ini: {format_rupiah(total_pengeluaran_bln)}
                     - Sisa Saldo Kas: {format_rupiah(sisa_uang)}
+                    - Progress Tabungan Nikah Terkumpul: {format_rupiah(total_nikah)} (Fokus Misi: {misi_terpilih_nama})
 
                     Data Per Pos Pengeluaran, Sisa Alokasi & Status Otomatisnya:
                     {data_text}
