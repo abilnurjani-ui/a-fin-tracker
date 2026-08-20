@@ -87,16 +87,41 @@ else:
     status_pas = "🟡 Pas 🎯"
     status_over = "🔴 Overbudget 🥺"
 
+# --- CSS RESPONSIVE DESKTOP & MOBILE (HP) ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: {bg_main}; }}
+    
+    /* Styling Desktop */
     .main-title {{ font-size: 2.3rem; font-weight: 900; color: {color_title}; margin-bottom: 2px; }}
     .sub-title {{ font-size: 1rem; color: {color_sub}; margin-bottom: 22px; font-weight: 700; }}
-    .metric-card {{ background: {bg_card}; padding: 18px 22px; border-radius: 14px; border: {border_card}; }}
+    .metric-card {{ background: {bg_card}; padding: 18px 22px; border-radius: 16px; border: {border_card}; margin-bottom: 10px; }}
     .metric-label {{ font-size: 0.85rem; font-weight: 900; color: {color_label}; margin-bottom: 6px; }}
-    .metric-val {{ font-size: 1.6rem; font-weight: 900; color: {color_val}; }}
-    .target-card {{ background: {gradient_target}; padding: 22px 26px; border-radius: 16px; border: {border_target}; margin-bottom: 18px; }}
-    .stButton>button {{ border-radius: 10px !important; font-weight: 900 !important; padding: 10px 20px !important; }}
+    .metric-val {{ font-size: 1.55rem; font-weight: 900; color: {color_val}; word-break: break-word; }}
+    .target-card {{ background: {gradient_target}; padding: 22px 26px; border-radius: 18px; border: {border_target}; margin-bottom: 18px; }}
+    .target-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }}
+    
+    .stButton>button {{ border-radius: 12px !important; font-weight: 900 !important; padding: 10px 20px !important; }}
+
+    /* --- RESPONSIVE UNTUK HP / SMARTPHONE (Max-Width 768px) --- */
+    @media (max-width: 768px) {{
+        .main-title {{ font-size: 1.6rem !important; text-align: center; }}
+        .sub-title {{ font-size: 0.85rem !important; text-align: center; margin-bottom: 16px; }}
+        
+        /* Padding & Font Kartu Metrik HP */
+        .metric-card {{ padding: 14px 16px !important; border-radius: 14px !important; }}
+        .metric-label {{ font-size: 0.75rem !important; }}
+        .metric-val {{ font-size: 1.25rem !important; }}
+        
+        /* Layout Target Card di HP */
+        .target-card {{ padding: 16px 18px !important; }}
+        .target-header {{ flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }}
+        .target-title {{ font-size: 0.95rem !important; }}
+        .target-val {{ font-size: 1.3rem !important; }}
+        
+        /* Optimasi Form Input & Tombol HP */
+        .stButton>button {{ font-size: 0.85rem !important; padding: 8px 12px !important; }}
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -182,8 +207,13 @@ def ambil_semua_transaksi():
         data.append(d)
     if data:
         df_temp = pd.DataFrame(data)
-        if 'jenis_pengeluaran' not in df_temp.columns and 'kategori' in df_temp.columns:
+        if 'jenis_pengeluaran' not in df_temp.columns:
             df_temp['jenis_pengeluaran'] = df_temp['kategori'].map(KATEGORI_KE_JENIS).fillna("3. Pengeluaran Dinamis / Variabel")
+        else:
+            df_temp['jenis_pengeluaran'] = df_temp['jenis_pengeluaran'].fillna(
+                df_temp['kategori'].map(KATEGORI_KE_JENIS)
+            ).fillna("3. Pengeluaran Dinamis / Variabel")
+            
         return df_temp
     return pd.DataFrame()
 
@@ -253,7 +283,7 @@ else:
 
 sisa_uang = total_pemasukan_bln - total_pengeluaran_bln
 
-# Kartu Ringkasan Neraca Kas
+# Kartu Ringkasan Neraca Kas (Responsif di PC & HP)
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
@@ -298,7 +328,7 @@ with col_m4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Target Tabungan Pernikahan
+# Target Tabungan Pernikahan Responsif
 total_nikah = 0
 if not df.empty and 'kategori' in df.columns:
     total_nikah = df[df['kategori'].isin(['Kantong Tabungan Nikah', 'Tabungan Nikah'])]['nominal'].sum()
@@ -308,12 +338,12 @@ persen = progress * 100
 
 st.markdown(f"""
 <div class="target-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 1.15rem; font-weight: 900; color: {color_title};">🎯 MISSION: NIKAH 2028 💍🔥</span>
-        <span style="font-size: 0.95rem; font-weight: 900; color: #0284C7; background: #F8FAFC; padding: 6px 14px; border-radius: 10px;">{persen:.1f}% UNLOCKED ⚡</span>
+    <div class="target-header">
+        <span class="target-title" style="font-weight: 900; color: {color_title};">🎯 MISSION: NIKAH 2028 💍🔥</span>
+        <span style="font-size: 0.9rem; font-weight: 900; color: #0284C7; background: #F8FAFC; padding: 5px 12px; border-radius: 10px;">{persen:.1f}% UNLOCKED ⚡</span>
     </div>
-    <div style="font-size: 1.65rem; font-weight: 900; color: {color_val};">
-        {format_rupiah(total_nikah)} <span style="font-size: 0.9rem; color: {color_label}; font-weight: 700;">/ Goal {format_rupiah(TARGET_NIKAH)}</span>
+    <div class="target-val" style="font-weight: 900; color: {color_val};">
+        {format_rupiah(total_nikah)} <span style="font-size: 0.85rem; color: {color_label}; font-weight: 700;">/ Goal {format_rupiah(TARGET_NIKAH)}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -355,7 +385,7 @@ with tab1:
     col1, col2 = st.columns([1.25, 0.75])
 
     with col1:
-        st.subheader("📊 PERBANDINGAN ANGGARAN VS REALISASI PENGELUARAN 🎨")
+        st.subheader("📊 ANGGARAN VS REALISASI PENGELUARAN 🎨")
         if not merged.empty:
             fig = px.bar(
                 merged, 
