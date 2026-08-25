@@ -173,19 +173,32 @@ st.markdown(
 )
 
 
-# --- 3. INISIALISASI FIREBASE ADMIN (BEBAS ERROR ENCODING %28default%29) ---
+# --- 3. INISIALISASI FIREBASE ADMIN BERSIH & AMAN ---
 @st.cache_resource
 def init_firebase():
     if not firebase_admin._apps:
-        key_dict = dict(st.secrets["firebase"])
-        if "private_key" in key_dict:
-            key_dict["private_key"] = key_dict["private_key"].replace(
-                "\\n", "\n"
-            )
+        fb_secrets = dict(st.secrets["firebase"])
 
-        cred = credentials.Certificate(key_dict)
-        project_id = key_dict.get("project_id")
-        firebase_admin.initialize_app(cred, {"projectId": project_id})
+        # Menghapus parameter berpotensi merusak encoding
+        clean_creds = {
+            "type": fb_secrets.get("type"),
+            "project_id": fb_secrets.get("project_id"),
+            "private_key_id": fb_secrets.get("private_key_id"),
+            "private_key": fb_secrets.get("private_key").replace("\\n", "\n")
+            if fb_secrets.get("private_key")
+            else "",
+            "client_email": fb_secrets.get("client_email"),
+            "client_id": fb_secrets.get("client_id"),
+            "auth_uri": fb_secrets.get("auth_uri"),
+            "token_uri": fb_secrets.get("token_uri"),
+            "auth_provider_x509_cert_url": fb_secrets.get(
+                "auth_provider_x509_cert_url"
+            ),
+            "client_x509_cert_url": fb_secrets.get("client_x509_cert_url"),
+        }
+
+        cred = credentials.Certificate(clean_creds)
+        firebase_admin.initialize_app(cred)
 
     return firestore.client()
 
