@@ -1,8 +1,8 @@
 from datetime import datetime
-from google.cloud import firestore
+import firebase_admin
+from firebase_admin import credentials, firestore
 from google.genai import Client
 from google.genai.errors import APIError
-from google.oauth2 import service_account
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -173,26 +173,22 @@ st.markdown(
 )
 
 
-# --- 3. INISIALISASI FIRESTORE NATIVE CLIENT ---
+# --- 3. INISIALISASI FIREBASE ADMIN ---
 @st.cache_resource
-def get_firestore_db():
-    try:
+def init_firebase():
+    if not firebase_admin._apps:
         key_dict = dict(st.secrets["firebase"])
         if "private_key" in key_dict:
             key_dict["private_key"] = key_dict["private_key"].replace(
                 "\\n", "\n"
             )
 
-        creds = service_account.Credentials.from_service_account_info(key_dict)
-        return firestore.Client(
-            credentials=creds, project=key_dict.get("project_id")
-        )
-    except Exception as e:
-        st.error(f"⚠️ Gagal menghubungkan ke Firestore: {e}")
-        return None
+        cred = credentials.Certificate(key_dict)
+        firebase_admin.initialize_app(cred)
+    return firestore.client()
 
 
-db = get_firestore_db()
+db = init_firebase()
 
 # --- 4. KONFIGURASI ANGGARAN & MULTI-MILESTONE ---
 PEMASUKAN_DEFAULT = 8183550
@@ -237,11 +233,8 @@ def format_rupiah(nominal):
     return f"Rp{int(nominal):,}".replace(",", ".")
 
 
-# --- 5. OPERASI DATABASE FIREBASE NATIVE ---
+# --- 5. OPERASI DATABASE FIREBASE ---
 def simpan_transaksi(tgl, jenis_pengeluaran, kategori, nominal, ket):
-    if db is None:
-        st.error("Koneksi database terputus!")
-        return
     doc_ref = db.collection("transaksi").document()
     doc_ref.set({
         "tanggal": tgl.strftime("%Y-%m-%d"),
@@ -254,8 +247,6 @@ def simpan_transaksi(tgl, jenis_pengeluaran, kategori, nominal, ket):
 
 
 def update_transaksi(doc_id, tgl, jenis_pengeluaran, kategori, nominal, ket):
-    if db is None:
-        return
     doc_ref = db.collection("transaksi").document(doc_id)
     doc_ref.update({
         "tanggal": tgl.strftime("%Y-%m-%d"),
@@ -267,14 +258,10 @@ def update_transaksi(doc_id, tgl, jenis_pengeluaran, kategori, nominal, ket):
 
 
 def hapus_transaksi(doc_id):
-    if db is None:
-        return
     db.collection("transaksi").document(doc_id).delete()
 
 
 def ambil_semua_transaksi():
-    if db is None:
-        return pd.DataFrame()
     try:
         docs = db.collection("transaksi").stream()
         data = []
@@ -493,7 +480,7 @@ if total_nikah >= 30000000 and target_nominal == 30000000:
 
 st.markdown("---")
 
-# --- MENYUSUN DF MERGED SECARA AMAN (BEBAS CRASH) ---
+# --- MENYUSUN TABEL STATUS KANTONG OTOMATIS ---
 budget_df = pd.DataFrame([
     {"jenis_pengeluaran": j, "kategori": k, "Anggaran": b}
     for j, k_dict in STRUKTUR_TRANSAKSI.items()
