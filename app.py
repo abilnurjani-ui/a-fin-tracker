@@ -1,8 +1,8 @@
 from datetime import datetime
-import firebase_admin
-from firebase_admin import credentials, firestore
-from google import genai
+from google.cloud import firestore
+from google.genai import Client
 from google.genai.errors import APIError
+from google.oauth2 import service_account
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -172,16 +172,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- 3. INISIALISASI FIREBASE (DENGAN PENANGANAN EROR ID DATABASE) ---
-if not firebase_admin._apps:
-    key_dict = dict(st.secrets["firebase"])
-    if "private_key" in key_dict:
-        key_dict["private_key"] = key_dict["private_key"].replace("\\n", "\n")
-    cred = credentials.Certificate(key_dict)
-    firebase_admin.initialize_app(cred)
 
-# Menggunakan client firestore dengan aman tanpa memicu %28default%29
-db = firestore.client()
+# --- 3. INISIALISASI FIRESTORE NATIVE CLIENT ---
+@st.cache_resource
+def get_firestore_db():
+    try:
+        key_dict = dict(st.secrets["firebase"])
+        if "private_key" in key_dict:
+            key_dict["private_key"] = key_dict["private_key"].replace(
+                "\\n", "\n"
+            )
+
+        creds = service_account.Credentials.from_service_account_info(key_dict)
+        return firestore.Client(
+            credentials=creds, project=key_dict.get("project_id")
+        )
+    except Exception as e:
+        st.error(f"⚠️ Gagal menghubungkan ke Firestore: {e}")
+        return None
+
+
+db = get_firestore_db()
 
 # --- 4. KONFIGURASI ANGGARAN & MULTI-MILESTONE ---
 PEMASUKAN_DEFAULT = 8183550
@@ -226,8 +237,11 @@ def format_rupiah(nominal):
     return f"Rp{int(nominal):,}".replace(",", ".")
 
 
-# --- 5. OPERASI DATABASE FIREBASE ---
+# --- 5. OPERASI DATABASE FIREBASE NATIVE ---
 def simpan_transaksi(tgl, jenis_pengeluaran, kategori, nominal, ket):
+    if db is None:
+        st.error("Koneksi database terputus!")
+        return
     doc_ref = db.collection("transaksi").document()
     doc_ref.set({
         "tanggal": tgl.strftime("%Y-%m-%d"),
@@ -240,6 +254,8 @@ def simpan_transaksi(tgl, jenis_pengeluaran, kategori, nominal, ket):
 
 
 def update_transaksi(doc_id, tgl, jenis_pengeluaran, kategori, nominal, ket):
+    if db is None:
+        return
     doc_ref = db.collection("transaksi").document(doc_id)
     doc_ref.update({
         "tanggal": tgl.strftime("%Y-%m-%d"),
@@ -251,10 +267,14 @@ def update_transaksi(doc_id, tgl, jenis_pengeluaran, kategori, nominal, ket):
 
 
 def hapus_transaksi(doc_id):
+    if db is None:
+        return
     db.collection("transaksi").document(doc_id).delete()
 
 
 def ambil_semua_transaksi():
+    if db is None:
+        return pd.DataFrame()
     try:
         docs = db.collection("transaksi").stream()
         data = []
@@ -276,7 +296,6 @@ def ambil_semua_transaksi():
                     .fillna(df_temp["kategori"].map(KATEGORI_KE_JENIS))
                     .fillna("3. Pengeluaran Dinamis / Variabel")
                 )
-
             return df_temp
     except Exception as e:
         st.error(f"Gagal mengambil data dari Firestore: {e}")
@@ -313,7 +332,7 @@ if st.sidebar.button(text_btn_simpan, use_container_width=True, type="primary"):
         simpan_transaksi(tgl, jenis_selected, kategori_selected, nominal, ket)
         st.session_state["notif_sukses"] = (
             f"Transaksi {format_rupiah(nominal)} ke pos {kategori_selected}"
-            " telah berhasil tersimpan! 🚀"
+            " berhasil tersimpan! 🚀"
         )
         st.rerun()
     else:
@@ -474,7 +493,7 @@ if total_nikah >= 30000000 and target_nominal == 30000000:
 
 st.markdown("---")
 
-# --- MEMBANGUN KANTONG BERDASARKAN BUDGET DAN REALISASI (OTOMATIS ALOKASI & STATUS) ---
+# --- MENYUSUN DF MERGED SECARA AMAN (BEBAS CRASH) ---
 budget_df = pd.DataFrame([
     {"jenis_pengeluaran": j, "kategori": k, "Anggaran": b}
     for j, k_dict in STRUKTUR_TRANSAKSI.items()
@@ -598,8 +617,6 @@ with tab1:
                 },
                 hide_index=True,
             )
-        else:
-            st.info("💡 Belum terdapat data pengeluaran pada bulan berjalan.")
 
     with col2:
         st.subheader("🤖 AI Financial Coach 🧠")
@@ -610,19 +627,15 @@ with tab1:
                 st.error("🔑 GEMINI_API_KEY belum terpasang di Secrets! ⚠️")
             else:
                 try:
-                    client = genai.Client(api_key=GEMINI_KEY)
-                    data_text = (
-                        merged[[
-                            "jenis_pengeluaran",
-                            "kategori",
-                            "Anggaran",
-                            "Realisasi",
-                            "Sisa_Anggaran",
-                            "Status_Otomatis",
-                        ]].to_string(index=False)
-                        if not merged.empty
-                        else "Belum ada pengeluaran."
-                    )
+                    client = Client(api_key=GEMINI_KEY)
+                    data_text = merged[[
+                        "jenis_pengeluaran",
+                        "kategori",
+                        "Anggaran",
+                        "Realisasi",
+                        "Sisa_Anggaran",
+                        "Status_Otomatis",
+                    ]].to_string(index=False)
 
                     prompt = f"""
                     Analisis Keuangan Bulanan UANGABIL TRACKER:
