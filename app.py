@@ -173,7 +173,7 @@ st.markdown(
 )
 
 
-# --- 3. INISIALISASI FIREBASE ADMIN ---
+# --- 3. INISIALISASI FIREBASE ADMIN (BEBAS ERROR ENCODING %28default%29) ---
 @st.cache_resource
 def init_firebase():
     if not firebase_admin._apps:
@@ -184,7 +184,9 @@ def init_firebase():
             )
 
         cred = credentials.Certificate(key_dict)
-        firebase_admin.initialize_app(cred)
+        project_id = key_dict.get("project_id")
+        firebase_admin.initialize_app(cred, {"projectId": project_id})
+
     return firestore.client()
 
 
@@ -263,7 +265,7 @@ def hapus_transaksi(doc_id):
 
 def ambil_semua_transaksi():
     try:
-        docs = db.collection("transaksi").stream()
+        docs = db.collection("transaksi").get()
         data = []
         for doc in docs:
             d = doc.to_dict()
